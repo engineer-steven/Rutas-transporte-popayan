@@ -36,6 +36,57 @@ proyecto rutas/
 
 ---
 
+## ⚙️ Guía Rápida: Entorno Virtual y Puesta en Marcha
+
+Sigue estos 5 pasos para poner a funcionar el proyecto desde cero:
+
+### 1. Crear el Entorno Virtual
+```bash
+python -m venv venv
+```
+
+### 2. Activar el Entorno Virtual
+* **En PowerShell:**
+  ```powershell
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  .\venv\Scripts\Activate.ps1
+  ```
+* **En Símbolo del Sistema (CMD):**
+  ```cmd
+  venv\Scripts\activate.bat
+  ```
+* **En Git Bash:**
+  ```bash
+  source venv/Scripts/activate
+  ```
+*(Sabrás que está activo cuando veas `(venv)` al inicio de la terminal).*
+
+### 3. Instalar Dependencias
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+*(O simplemente haz doble clic en `scripts\instalar_dependencias.bat`).*
+
+### 4. Importar la Base de Datos en MySQL
+Ejecuta el archivo [`base_de_datos/esquema_bd.sql`](base_de_datos/esquema_bd.sql) en MySQL Workbench o phpMyAdmin.
+
+### 5. Iniciar los Servidores
+Haz doble clic en:
+```text
+ejecutar_servidores/iniciar_servidores.bat
+```
+O arráncalos manualmente por terminal:
+```bash
+python microservicios/servicio_rutas/servidor_rutas.py
+python microservicios/servicio_operaciones/servidor_operaciones.py
+```
+* **WSDL Rutas:** `http://127.0.0.1:8001/?wsdl`
+* **WSDL Operaciones:** `http://127.0.0.1:8002/?wsdl`
+
+
+---
+
 ## 📋 Guía de Implementación: Lo Que Hay Que Hacer
 
 Cada archivo contiene su esqueleto estructurado con comentarios `# TODO` y explicaciones paso a paso de lo que debes programar:
@@ -55,12 +106,13 @@ Cada archivo contiene su esqueleto estructurado con comentarios `# TODO` y expli
 - Agregar sentencias `INSERT INTO` con datos reales de Popayán para pruebas.
 
 ### 3. `microservicios/servicio_rutas/servidor_rutas.py` (Puerto 8001)
-- Definir el modelo SOAP `Route` (id, code, company, origin, destination, fare, schedule, status).
+- Definir los modelos SOAP `Route` y `TripPlanResult`.
 - En la clase `RoutesService(ServiceBase)`, implementar las operaciones:
   - `get_all_routes(ctx)`: Consultar y listar todas las rutas.
   - `get_route_by_id(ctx, route_id)`: Buscar una ruta específica por ID.
   - `search_routes_by_zone(ctx, zone_keyword)`: Filtrar rutas que pasen por un sector clave (ej: Campanario, Centro).
   - `add_route(ctx, ...)`: Insertar una nueva ruta en la base de datos.
+  - `plan_trip(ctx, origin_keyword, destination_keyword)`: **[Lógica No Plana / Algorítmica]** Planifica el viaje óptimo directo entre dos puntos de Popayán validando el sentido de los paraderos (`stop_order`), calculando paradas intermedias, tiempo estimado y tarifa.
 - Configurar el servidor WSGI en `http://127.0.0.1:8001/?wsdl`.
 
 ### 4. `microservicios/servicio_operaciones/servidor_operaciones.py` (Puerto 8002)
