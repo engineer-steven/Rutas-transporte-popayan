@@ -1,0 +1,25 @@
+# Entorno virtual de Python
+venv/
+env/
+.venv/
+
+# Archivos de caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs y temporales
+*.log
+*.tmp
+logs/
+
+# Variables de entorno y credenciales locales
+.env
+local_settings.py

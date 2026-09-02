@@ -1,0 +1,63 @@
+-- ==============================================================================
+-- ESQUEMA DE BASE DE DATOS: SISTEMA DE TRANSPORTE PÚBLICO (POPAYÁN)
+-- Base de Datos: movi_popayan_db
+-- ==============================================================================
+--
+-- INSTRUCCIONES GENERALES:
+-- 1. Crear la base de datos `movi_popayan_db` con codificación UTF8MB4 si no existe.
+-- 2. Seleccionar la base de datos para su uso (USE movi_popayan_db;).
+-- 3. Crear las 4 tablas principales requeridas por los microservicios:
+--
+--    A. TABLA `routes` (Rutas de transporte):
+--       - id: Identificador único autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
+--       - code: Código o identificador de la ruta (VARCHAR, ej: 'RUTA-1', 'LINEA-2').
+--       - company: Empresa prestadora (VARCHAR, ej: 'Sotracauca', 'Transpubenza').
+--       - origin: Punto de inicio del recorrido (VARCHAR, ej: 'Barrio Bolívar').
+--       - destination: Punto final del recorrido (VARCHAR, ej: 'Campanario / Variante').
+--       - fare: Tarifa actual en pesos (DECIMAL(10,2)).
+--       - schedule: Horario de operación (VARCHAR, ej: '05:30 - 21:00').
+--       - status: Estado de la ruta (VARCHAR, ej: 'ACTIVA', 'SUSPENDIDA').
+--
+--    B. TABLA `stops` (Paraderos y puntos de referencia de cada ruta):
+--       - id: Identificador autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
+--       - route_id: Llave foránea que referencia a `routes(id)`.
+--       - name: Nombre del paradero o punto (VARCHAR, ej: 'Terminal de Transportes').
+--       - landmark_reference: Punto de referencia cercano (VARCHAR, ej: 'Frente a taquillas').
+--       - stop_order: Orden o secuencia en el trayecto (INT).
+--
+--    C. TABLA `dispatches` (Control de despachos y salidas de buses):
+--       - id: Identificador autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
+--       - route_id: Llave foránea que referencia a `routes(id)`.
+--       - bus_plate: Placa del bus o vehículo (VARCHAR, ej: 'TPK-102').
+--       - departure_time: Hora de salida programada o registrada (TIME o DATETIME).
+--       - status: Estado del despacho (VARCHAR, ej: 'EN_RUTA', 'FINALIZADO').
+--
+--    D. TABLA `incidents` (Reporte de novedades, tráfico y alertas en ruta):
+--       - id: Identificador autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
+--       - route_id: Llave foránea que referencia a `routes(id)`.
+--       - incident_type: Tipo de incidente (VARCHAR, ej: 'CONGESTION', 'ACCIDENTE', 'DESVIO').
+--       - description: Detalle de la eventualidad (TEXT).
+--       - reported_by: Persona o entidad que reporta (VARCHAR).
+--       - reported_at: Fecha y hora del reporte (DATETIME DEFAULT CURRENT_TIMESTAMP).
+--       - status: Estado del incidente (VARCHAR, ej: 'ACTIVO', 'RESUELTO').
+--
+-- 4. INSERTAR DATOS DE PRUEBA:
+--    - Insertar al menos 3 a 5 rutas representativas de Popayán.
+--    - Insertar paraderos correspondientes para cada ruta.
+--    - Insertar despachos de prueba para permitir el cálculo de diferencia de tiempos.
+--    - Insertar incidentes de prueba.
+-- ==============================================================================
+
+-- TODO: Escribe aquí la sentencia para crear la base de datos
+-- CREATE DATABASE IF NOT EXISTS movi_popayan_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE movi_popayan_db;
+
+-- TODO: Crear la tabla `routes`
+
+-- TODO: Crear la tabla `stops`
+
+-- TODO: Crear la tabla `dispatches`
+
+-- TODO: Crear la tabla `incidents`
+
+-- TODO: Insertar registros de prueba (INSERT INTO ...)
