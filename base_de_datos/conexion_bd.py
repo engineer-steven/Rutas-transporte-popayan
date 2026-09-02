@@ -20,26 +20,27 @@ INSTRUCCIONES DE IMPLEMENTACIÓN:
 """
 
 import os
-# TODO: Importar la librería de MySQL (ejemplo: import pymysql)
+import pymysql
+from pymysql.cursors import DictCursor
 
-# TODO: Definir el diccionario con los parámetros de conexión
-# Parámetros esperados:
-#   - host: Dirección del servidor MySQL (por defecto: 'localhost')
-#   - user: Usuario de la base de datos (por defecto: 'root')
-#   - password: Clave de acceso a MySQL
-#   - db: Nombre de la base de datos ('movi_popayan_db')
-#   - port: Puerto de escucha (por defecto: 3306)
+# Configuración de los parámetros de conexión con variables de entorno y valores por defecto
 DB_CONFIG = {
-    # TODO: Completar la configuración de conexión
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', 'Admin#123456'),
+    'database': os.getenv('DB_NAME', 'movi_popayan_db'),
+    'port': int(os.getenv('DB_PORT', 3306)),
+    'charset': 'utf8mb4',
+    'cursorclass': DictCursor
 }
 
 
 def get_db_connection():
     """
-    TODO: Implementar la función que establece y retorna la conexión activa a MySQL.
+    Implementa la función que establece y retorna la conexión activa a MySQL.
     
     Retorna:
         Objeto de conexión a la base de datos listo para ejecutar consultas.
     """
-    # TODO: Retornar pymysql.connect(**DB_CONFIG)
-    pass
+    connection = pymysql.connect(**DB_CONFIG)
+    return connection
