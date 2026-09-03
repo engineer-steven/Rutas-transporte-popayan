@@ -1,7 +1,94 @@
+# ==============================================================================
+# GUÍA PASO A PASO: CONFIGURACIÓN DEL ENTORNO VIRTUAL Y EJECUCIÓN
+# ==============================================================================
+#
+# REQUISITOS PREVIOS:
+#   - Python 3.8 o superior instalado en el sistema.
+#   - Servidor MySQL activo en el puerto 3306 (XAMPP, WAMP o MySQL Workbench).
+#
+# ------------------------------------------------------------------------------
+# PASO 1: CREAR EL ENTORNO VIRTUAL
+# ------------------------------------------------------------------------------
+# Abre una terminal (PowerShell, CMD o Git Bash) en la raíz del proyecto y ejecuta:
+#
+#   python -m venv venv
+#
+# ------------------------------------------------------------------------------
+# PASO 2: ACTIVAR EL ENTORNO VIRTUAL
+# ------------------------------------------------------------------------------
+# Dependiendo de la terminal que uses en Windows:
+#
+#   - En PowerShell:
+#       Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+#       .\venv\Scripts\Activate.ps1
+#
+#   - En Símbolo del Sistema (CMD):
+#       venv\Scripts\activate.bat
+#
+#   - En Git Bash:
+#       source venv/Scripts/activate
+#
+#   (Sabrás que está activo cuando veas '(venv)' al inicio de la línea de comandos).
+#
+# ------------------------------------------------------------------------------
+# PASO 3: INSTALAR ESTAS DEPENDENCIAS
+# ------------------------------------------------------------------------------
+# Con el entorno virtual activo, ejecuta:
+#
+#   pip install --upgrade pip
+#   pip install -r requirements.txt
+#
+# ------------------------------------------------------------------------------
+# PASO 4: IMPORTAR LA BASE DE DATOS
+# ------------------------------------------------------------------------------
+# Abre tu gestor MySQL (phpMyAdmin, Workbench o consola) y ejecuta el archivo:
+#
+#   base_de_datos/esquema_bd.sql
+#
+# Esto creará la base de datos 'movi_popayan_db' con sus tablas y datos iniciales.
+#
+# ------------------------------------------------------------------------------
+# PASO 5: EJECUTAR LOS SERVIDORES
+# ------------------------------------------------------------------------------
+# Puedes iniciar ambos microservicios con doble clic en:
+#
+#   ejecutar_servidores/iniciar_servidores.bat
+#
+# O ejecutarlos individualmente por terminal:
+#
+#   python microservicios/servicio_rutas/servidor_rutas.py
+#   python microservicios/servicio_operaciones/servidor_operaciones.py
+#
+# WSDL Disponibles:
+#   - Rutas (Puerto 8001):       http://127.0.0.1:8001/?wsdl
+#   - Operaciones (Puerto 8002): http://127.0.0.1:8002/?wsdl
+#
+# ------------------------------------------------------------------------------
+# PARA DESACTIVAR EL ENTORNO VIRTUAL AL TERMINAR:
+# ------------------------------------------------------------------------------
+#   deactivate
+#
+# ==============================================================================
+# LISTA DE DEPENDENCIAS DE PYTHON:
+# ==============================================================================
+
+# Framework para microservicios web basados en SOAP / RPC
 spyne==2.14.0
+
+# Conector MySQL nativo y ligero para Python
 PyMySQL==1.1.2
+
+# Librería criptográfica para autenticación segura en MySQL
 cryptography>=42.0.0
+
+# Procesador XML de alto rendimiento requerido por Spyne
 lxml==6.0.2
+
+# Cliente HTTP para realizar peticiones y pruebas
 requests==2.32.5
+
+# Cliente SOAP avanzado para Python
 zeep==4.3.2
+
+# Carga de variables de entorno desde archivo .env
 python-dotenv==1.0.1
