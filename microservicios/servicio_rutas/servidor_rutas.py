@@ -16,7 +16,7 @@ from spyne import (
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
 
-from base_de_datos.conexion_bd import get_db_connection
+from conexion_bd import get_db_connection
 
 
 # ============================================================
