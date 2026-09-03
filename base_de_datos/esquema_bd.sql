@@ -2,62 +2,103 @@
 -- ESQUEMA DE BASE DE DATOS: SISTEMA DE TRANSPORTE PÚBLICO (POPAYÁN)
 -- Base de Datos: movi_popayan_db
 -- ==============================================================================
---
--- INSTRUCCIONES GENERALES:
--- 1. Crear la base de datos `movi_popayan_db` con codificación UTF8MB4 si no existe.
--- 2. Seleccionar la base de datos para su uso (USE movi_popayan_db;).
--- 3. Crear las 4 tablas principales requeridas por los microservicios:
---
---    A. TABLA `routes` (Rutas de transporte):
---       - id: Identificador único autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
---       - code: Código o identificador de la ruta (VARCHAR, ej: 'RUTA-1', 'LINEA-2').
---       - company: Empresa prestadora (VARCHAR, ej: 'Sotracauca', 'Transpubenza').
---       - origin: Punto de inicio del recorrido (VARCHAR, ej: 'Barrio Bolívar').
---       - destination: Punto final del recorrido (VARCHAR, ej: 'Campanario / Variante').
---       - fare: Tarifa actual en pesos (DECIMAL(10,2)).
---       - schedule: Horario de operación (VARCHAR, ej: '05:30 - 21:00').
---       - status: Estado de la ruta (VARCHAR, ej: 'ACTIVA', 'SUSPENDIDA').
---
---    B. TABLA `stops` (Paraderos y puntos de referencia de cada ruta):
---       - id: Identificador autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
---       - route_id: Llave foránea que referencia a `routes(id)`.
---       - name: Nombre del paradero o punto (VARCHAR, ej: 'Terminal de Transportes').
---       - landmark_reference: Punto de referencia cercano (VARCHAR, ej: 'Frente a taquillas').
---       - stop_order: Orden o secuencia en el trayecto (INT).
---
---    C. TABLA `dispatches` (Control de despachos y salidas de buses):
---       - id: Identificador autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
---       - route_id: Llave foránea que referencia a `routes(id)`.
---       - bus_plate: Placa del bus o vehículo (VARCHAR, ej: 'TPK-102').
---       - departure_time: Hora de salida programada o registrada (TIME o DATETIME).
---       - status: Estado del despacho (VARCHAR, ej: 'EN_RUTA', 'FINALIZADO').
---
---    D. TABLA `incidents` (Reporte de novedades, tráfico y alertas en ruta):
---       - id: Identificador autoincremental (INT PRIMARY KEY AUTO_INCREMENT).
---       - route_id: Llave foránea que referencia a `routes(id)`.
---       - incident_type: Tipo de incidente (VARCHAR, ej: 'CONGESTION', 'ACCIDENTE', 'DESVIO').
---       - description: Detalle de la eventualidad (TEXT).
---       - reported_by: Persona o entidad que reporta (VARCHAR).
---       - reported_at: Fecha y hora del reporte (DATETIME DEFAULT CURRENT_TIMESTAMP).
---       - status: Estado del incidente (VARCHAR, ej: 'ACTIVO', 'RESUELTO').
---
--- 4. INSERTAR DATOS DE PRUEBA:
---    - Insertar al menos 3 a 5 rutas representativas de Popayán.
---    - Insertar paraderos correspondientes para cada ruta.
---    - Insertar despachos de prueba para permitir el cálculo de diferencia de tiempos.
---    - Insertar incidentes de prueba.
+
+CREATE DATABASE IF NOT EXISTS movi_popayan_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE movi_popayan_db;
+
+-- 1. TABLA routes (Rutas de transporte público de Popayán)
+CREATE TABLE IF NOT EXISTS routes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    company VARCHAR(100) NOT NULL,
+    origin VARCHAR(150) NOT NULL,
+    destination VARCHAR(150) NOT NULL,
+    fare DECIMAL(10,2) NOT NULL DEFAULT 2800.00,
+    schedule VARCHAR(100) NOT NULL DEFAULT '05:30 - 21:00',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVA'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. TABLA stops (Paraderos y puntos de referencia de cada ruta)
+CREATE TABLE IF NOT EXISTS stops (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    landmark_reference VARCHAR(200),
+    stop_order INT NOT NULL,
+    FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. TABLA dispatches (Control de despachos e intervalos entre buses)
+CREATE TABLE IF NOT EXISTS dispatches (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT NOT NULL,
+    bus_plate VARCHAR(20) NOT NULL,
+    departure_time TIME NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'EN_RUTA',
+    FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. TABLA incidents (Reporte de novedades viales, tráfico y desvíos)
+CREATE TABLE IF NOT EXISTS incidents (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    route_id INT NOT NULL,
+    incident_type VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    reported_by VARCHAR(100) NOT NULL,
+    reported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
+    FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ==============================================================================
+-- DATOS INICIALES DE PRUEBA (POPAYÁN)
 -- ==============================================================================
 
--- TODO: Escribe aquí la sentencia para crear la base de datos
--- CREATE DATABASE IF NOT EXISTS movi_popayan_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE movi_popayan_db;
+-- Rutas
+INSERT INTO routes (id, code, company, origin, destination, fare, schedule, status) VALUES
+(1, 'RUTA-1', 'Sotracauca', 'Barrio Bolívar', 'Campanario / Variante Norte', 2800.00, '05:30 - 21:30', 'ACTIVA'),
+(2, 'LINEA-2', 'Transpubenza', 'Lomas de Granada', 'Terminal de Transportes', 2800.00, '06:00 - 21:00', 'ACTIVA'),
+(3, 'RUTA-5', 'Translibertad', 'Bello Horizonte', 'Hospital San José / Centro', 2900.00, '05:45 - 20:45', 'ACTIVA'),
+(4, 'RUTA-9', 'Sotracauca', 'Terminal de Transportes', 'Variante Norte / Campanario', 2800.00, '06:00 - 22:00', 'ACTIVA')
+ON DUPLICATE KEY UPDATE code=VALUES(code);
 
--- TODO: Crear la tabla `routes`
+-- Paraderos de la Ruta 1 (Barrio Bolívar -> Campanario)
+INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
+(1, 'Paradero Barrio Bolívar', 'Frente a galería Bolívar', 1),
+(1, 'Parque Caldas - Centro', 'Carrera 6 con Calle 4', 2),
+(1, 'Hospital Universitario San José', 'Urgencias Calle 5', 3),
+(1, 'Centro Comercial Campanario', 'Entrada principal Panamericana', 4),
+(1, 'Variante Norte', 'Frente a Makro Popayán', 5);
 
--- TODO: Crear la tabla `stops`
+-- Paraderos de la Ruta 2 (Lomas de Granada -> Terminal)
+INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
+(2, 'Lomas de Granada', 'Entrada sector 3', 1),
+(2, 'Barrio La Esmeralda', 'Frente a droguería La Economía', 2),
+(2, 'Parque Caldas - Centro', 'Carrera 7 con Calle 5', 3),
+(2, 'Terminal de Transportes', 'Bahía de desembarque taquillas', 4);
 
--- TODO: Crear la tabla `dispatches`
+-- Paraderos de la Ruta 5 (Bello Horizonte -> Hospital San José)
+INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
+(3, 'Bello Horizonte', 'Cerca a polideportivo norte', 1),
+(3, 'Centro Comercial Campanario', 'Frente a Olímpica', 2),
+(3, 'Hospital Universitario San José', 'Entrada consulta externa', 3);
 
--- TODO: Crear la tabla `incidents`
+-- Paraderos de la Ruta 9 (Terminal -> Variante Norte)
+INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
+(4, 'Terminal de Transportes', 'Bahía principal', 1),
+(4, 'Centro Comercial Campanario', 'Entrada Panamericana', 2),
+(4, 'Variante Norte', 'Glorieta Chirimía norte', 3);
 
--- TODO: Insertar registros de prueba (INSERT INTO ...)
+-- Despachos de prueba (para cálculo de diferencia de tiempos de buses)
+INSERT INTO dispatches (route_id, bus_plate, departure_time, status) VALUES
+(1, 'TPK-101', '06:30:00', 'FINALIZADO'),
+(1, 'TPK-102', '06:48:00', 'EN_RUTA'),
+(1, 'TPK-103', '07:05:00', 'EN_RUTA'),
+(2, 'SOT-205', '07:15:00', 'EN_RUTA'),
+(2, 'SOT-206', '07:35:00', 'EN_RUTA');
+
+-- Incidentes viales de prueba
+INSERT INTO incidents (route_id, incident_type, description, reported_by, status) VALUES
+(1, 'CONGESTION', 'Tráfico denso y paso restringido en la Carrera 6 cerca a la galería Bolívar', 'Operador Central Sotracauca', 'ACTIVO'),
+(2, 'DESVIO', 'Cierre parcial temporal por pavimentación en vía La Esmeralda', 'Tránsito Municipal Popayán', 'ACTIVO');
