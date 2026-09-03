@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from datetime import datetime
 from wsgiref.simple_server import make_server
 from spyne import (
@@ -55,16 +54,6 @@ class BusTimeDifferenceResult(ComplexModel):
     departure_time_1 = Unicode
     departure_time_2 = Unicode
     difference_minutes = Integer
-
-
-# ============================================================
-# MODELO SOAP: RouteStatus
-# ============================================================
-
-class RouteStatus(ComplexModel):
-    route_id = Integer
-    status = Unicode
-    active_incidents_count = Integer
 
 
 # ============================================================
@@ -466,170 +455,6 @@ class OperationsService(ServiceBase):
                 incidentes.append(incidente)
 
             return incidentes
-
-        finally:
-            if cursor:
-                cursor.close()
-
-            if conexion:
-                conexion.close()
-
-
-    # ========================================================
-    # 6. ACTUALIZAR ESTADO DE UN INCIDENTE
-    # ========================================================
-
-    @rpc(
-        Integer,
-        Unicode,
-        _returns=Incident
-    )
-    def update_incident_status(ctx, incident_id, new_status):
-
-        conexion = None
-        cursor = None
-
-        try:
-            conexion = get_db_connection()
-            cursor = conexion.cursor()
-
-            # Verificar que el incidente exista
-            cursor.execute(
-                """
-                SELECT id
-                FROM incidents
-                WHERE id = %s
-                """,
-                (incident_id,)
-            )
-
-            incidente_existente = cursor.fetchone()
-
-            if not incidente_existente:
-                raise Exception(
-                    f"El incidente {incident_id} no existe."
-                )
-
-            # Actualizar el estado
-            cursor.execute(
-                """
-                UPDATE incidents
-                SET status = %s
-                WHERE id = %s
-                """,
-                (new_status, incident_id)
-            )
-
-            conexion.commit()
-
-            # Obtener el incidente ya actualizado
-            cursor.execute(
-                """
-                SELECT
-                    id,
-                    route_id,
-                    incident_type,
-                    description,
-                    reported_by,
-                    reported_at,
-                    status
-                FROM incidents
-                WHERE id = %s
-                """,
-                (incident_id,)
-            )
-
-            fila = cursor.fetchone()
-
-            if not fila:
-                raise Exception(
-                    "No fue posible recuperar el incidente actualizado."
-                )
-
-            return Incident(
-                id=fila["id"],
-                route_id=fila["route_id"],
-                incident_type=fila["incident_type"],
-                description=fila["description"],
-                reported_by=fila["reported_by"],
-                reported_at=str(fila["reported_at"]),
-                status=fila["status"]
-            )
-
-        except Exception:
-            if conexion:
-                conexion.rollback()
-
-            raise
-
-        finally:
-            if cursor:
-                cursor.close()
-
-            if conexion:
-                conexion.close()
-
-
-    # ========================================================
-    # 7. OBTENER ESTADO DE UNA RUTA
-    # ========================================================
-
-    @rpc(
-        Integer,
-        _returns=RouteStatus
-    )
-    def get_route_status(ctx, route_id):
-
-        conexion = None
-        cursor = None
-
-        try:
-            conexion = get_db_connection()
-            cursor = conexion.cursor()
-
-            # Verificar que la ruta exista
-            cursor.execute(
-                """
-                SELECT id
-                FROM routes
-                WHERE id = %s
-                """,
-                (route_id,)
-            )
-
-            ruta = cursor.fetchone()
-
-            if not ruta:
-                raise Exception(
-                    f"La ruta {route_id} no existe."
-                )
-
-            # Contar incidentes activos de la ruta
-            cursor.execute(
-                """
-                SELECT COUNT(*) AS total
-                FROM incidents
-                WHERE route_id = %s
-                  AND status = 'ACTIVO'
-                """,
-                (route_id,)
-            )
-
-            fila = cursor.fetchone()
-
-            total_incidentes = fila["total"] if fila else 0
-
-            # Determinar el estado general de la ruta
-            if total_incidentes > 0:
-                estado = "CON_PROBLEMAS"
-            else:
-                estado = "ACTIVA"
-
-            return RouteStatus(
-                route_id=route_id,
-                status=estado,
-                active_incidents_count=total_incidentes
-            )
 
         finally:
             if cursor:
