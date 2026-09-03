@@ -51,26 +51,40 @@ CREATE TABLE IF NOT EXISTS incidents (
     FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
 );
 
--- 6. INSERTAR DATOS DE PRUEBA
+-- 6. INSERTAR DATOS (rutas reales de Popayán: Transpubenza, Sotracauca, Translibertad, Transtambo)
 INSERT INTO routes (code, company, origin, destination, fare, schedule, status) VALUES
-('RUTA-1', 'Sotracauca', 'Barrio Bolívar', 'Campanario / Variante', 2500.00, '05:30 - 21:00', 'ACTIVA'),
-('RUTA-2', 'Transpubenza', 'Lomas de Granada', 'Pandiguando', 2500.00, '06:00 - 20:30', 'ACTIVA'),
-('RUTA-5', 'Sotracauca', 'La Esmeralda', 'Terminal de Transportes', 2500.00, '05:00 - 22:00', 'ACTIVA');
+('TP1BT', 'Transpubenza', 'La Paz', 'Los Naranjos', 2500.00, '05:30 - 21:00', 'ACTIVA'),
+('TP9BT', 'Transpubenza', 'Lomas de Granada', 'La Venta', 2500.00, '05:30 - 21:00', 'ACTIVA'),
+('SC1M', 'Sotracauca', 'Calle 72 Norte', 'Calle 72 Norte', 2500.00, '05:00 - 22:00', 'ACTIVA'),
+('SC7M', 'Sotracauca', 'Piendamó', 'Santa Teresa', 2500.00, '05:00 - 22:00', 'ACTIVA'),
+('TL1BT', 'Translibertad', 'Calle 5', 'Calle 5', 2500.00, '05:00 - 21:30', 'ACTIVA'),
+('TT1M', 'Transtambo', 'Cajete', 'Pisojé', 2500.00, '05:30 - 20:00', 'ACTIVA');
 
 INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
-(1, 'Barrio Bolívar', 'Zona comercial central', 1),
-(1, 'Parque Caldas', 'Plazoleta principal', 2),
-(1, 'Centro Comercial Campanario', 'Frente a la entrada principal', 3),
+(1, 'La Paz', 'Barrio La Paz', 1),
+(1, 'La Esmeralda', 'Galería La Esmeralda', 2),
+(1, 'Tomas Cipriano', 'Sector Tomas Cipriano', 3),
+(1, 'Los Naranjos', 'Barrio Los Naranjos', 4),
 (2, 'Lomas de Granada', 'Entrada principal etapa 1', 1),
-(2, 'Puente del Humilladero', 'Sector histórico', 2),
-(3, 'La Esmeralda', 'Cancha principal', 1),
-(3, 'Terminal de Transportes', 'Frente a taquillas', 2);
+(2, 'Los Naranjos', 'Barrio Los Naranjos', 2),
+(2, 'Centro', 'Carrera 6ª / 7ª', 3),
+(2, 'La Venta', 'Sector La Venta', 4),
+(3, 'Calle 72 Norte', 'Anillo vial norte', 1),
+(4, 'Comuna 1', 'Zona urbana norte', 1),
+(4, 'La Esmeralda', 'Galería La Esmeralda', 2),
+(4, 'Santa Teresa', 'Sector Santa Teresa', 3),
+(5, 'Calle 5', 'Eje vial Calle 5', 1),
+(5, 'Comuna 2', 'Zona norte', 2),
+(6, 'Cajete', 'Vereda Cajete', 1),
+(6, 'Lomas de Granada', 'Entrada principal etapa 1', 2),
+(6, 'Galería La Esmeralda', 'Terminal de buses colectivos', 3),
+(6, 'Pisojé', 'Vereda Pisojé', 4);
 
 INSERT INTO dispatches (route_id, bus_plate, departure_time, status) VALUES
 (1, 'TPK-102', '2026-09-02 06:30:00', 'EN_RUTA'),
-(2, 'SOT-451', '2026-09-02 07:00:00', 'FINALIZADO'),
-(3, 'TPB-890', '2026-09-02 07:15:00', 'EN_RUTA');
+(3, 'SOT-451', '2026-09-02 07:00:00', 'FINALIZADO'),
+(6, 'TPB-890', '2026-09-02 07:15:00', 'EN_RUTA');
 
 INSERT INTO incidents (route_id, incident_type, description, reported_by, status) VALUES
 (1, 'CONGESTION', 'Tráfico pesado en el sector del centro histórico por obras viales.', 'Conductor', 'ACTIVO'),
-(2, 'DESVIO', 'Cierre temporal de vía cerca al puente por manifestación.', 'Pasajero', 'RESUELTO');
+(5, 'DESVIO', 'Cierre temporal de vía cerca al puente por manifestación.', 'Pasajero', 'RESUELTO');
