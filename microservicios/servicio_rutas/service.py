@@ -337,7 +337,7 @@ class RoutesService(ServiceBase):
 
         factor_trafico = 1.45 if es_pico else 1.0
         paraderos = repository.get_route_stops_count(route_id)
-        base_minutos = max(15, paradas_min := (paraderos * 3 if paraderos > 0 else 25))
+        base_minutos = max(15, paraderos * 3 if paraderos > 0 else 25)
         minutos_reales = int(round(base_minutos * factor_trafico))
 
         llegada_dt = hora_dt + timedelta(minutes=minutos_reales)

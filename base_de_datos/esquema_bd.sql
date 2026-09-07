@@ -51,15 +51,6 @@ CREATE TABLE IF NOT EXISTS incidents (
     FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. INSERTAR DATOS (rutas reales de Popayán: Transpubenza, Sotracauca, Translibertad, Transtambo)
-INSERT INTO routes (code, company, origin, destination, fare, schedule, status) VALUES
-('TP1BT', 'Transpubenza', 'La Paz', 'Los Naranjos', 2500.00, '05:30 - 21:00', 'ACTIVA'),
-('TP9BT', 'Transpubenza', 'Lomas de Granada', 'La Venta', 2500.00, '05:30 - 21:00', 'ACTIVA'),
-('SC1M', 'Sotracauca', 'Calle 72 Norte', 'Calle 72 Norte', 2500.00, '05:00 - 22:00', 'ACTIVA'),
-('SC7M', 'Sotracauca', 'Piendamó', 'Santa Teresa', 2500.00, '05:00 - 22:00', 'ACTIVA'),
-('TL1BT', 'Translibertad', 'Calle 5', 'Calle 5', 2500.00, '05:00 - 21:30', 'ACTIVA'),
-('TT1M', 'Transtambo', 'Cajete', 'Pisojé', 2500.00, '05:30 - 20:00', 'ACTIVA');
-
 -- ==============================================================================
 -- DATOS INICIALES DE PRUEBA (POPAYÁN)
 -- ==============================================================================
@@ -69,8 +60,19 @@ INSERT INTO routes (id, code, company, origin, destination, fare, schedule, stat
 (1, 'RUTA-1', 'Sotracauca', 'Barrio Bolívar', 'Campanario / Variante Norte', 2800.00, '05:30 - 21:30', 'ACTIVA'),
 (2, 'LINEA-2', 'Transpubenza', 'Lomas de Granada', 'Terminal de Transportes', 2800.00, '06:00 - 21:00', 'ACTIVA'),
 (3, 'RUTA-5', 'Translibertad', 'Bello Horizonte', 'Hospital San José / Centro', 2900.00, '05:45 - 20:45', 'ACTIVA'),
-(4, 'RUTA-9', 'Sotracauca', 'Terminal de Transportes', 'Variante Norte / Campanario', 2800.00, '06:00 - 22:00', 'ACTIVA')
+(4, 'RUTA-9', 'Sotracauca', 'Terminal de Transportes', 'Variante Norte / Campanario', 2800.00, '06:00 - 22:00', 'ACTIVA'),
+(5, 'TL1BT', 'Translibertad', 'Calle 5', 'Calle 5', 2500.00, '05:00 - 21:30', 'ACTIVA'),
+(6, 'TT1M', 'Transtambo', 'Cajete', 'Pisojé', 2500.00, '05:30 - 20:00', 'ACTIVA')
 ON DUPLICATE KEY UPDATE code=VALUES(code);
+
+-- Rutas adicionales reales de Popayán (sin stops asociados en este esquema)
+INSERT INTO routes (id, code, company, origin, destination, fare, schedule, status) VALUES
+(7,  'TP1BT', 'Transpubenza', 'La Paz', 'Los Naranjos', 2500.00, '05:30 - 21:00', 'ACTIVA'),
+(8,  'TP9BT', 'Transpubenza', 'Lomas de Granada', 'La Venta', 2500.00, '05:30 - 21:00', 'ACTIVA'),
+(9,  'SC1M',  'Sotracauca', 'Calle 72 Norte', 'Calle 72 Norte', 2500.00, '05:00 - 22:00', 'ACTIVA'),
+(10, 'SC7M',  'Sotracauca', 'Piendamó', 'Santa Teresa', 2500.00, '05:00 - 22:00', 'ACTIVA')
+ON DUPLICATE KEY UPDATE code=VALUES(code);
+
 
 -- Paraderos de la Ruta 1 (Barrio Bolívar -> Campanario)
 INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
