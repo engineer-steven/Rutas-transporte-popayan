@@ -62,9 +62,19 @@ INSERT INTO routes (id, code, company, origin, destination, fare, schedule, stat
 (3, 'RUTA-5', 'Translibertad', 'Bello Horizonte', 'Hospital San José / Centro', 2900.00, '05:45 - 20:45', 'ACTIVA'),
 (4, 'RUTA-9', 'Sotracauca', 'Terminal de Transportes', 'Variante Norte / Campanario', 2800.00, '06:00 - 22:00', 'ACTIVA'),
 (5, 'TL1BT', 'Translibertad', 'Calle 5', 'Calle 5', 2500.00, '05:00 - 21:30', 'ACTIVA'),
-(6, 'TT1M', 'Transtambo', 'Cajete', 'Pisojé', 2500.00, '05:30 - 20:00', 'ACTIVA');
+(6, 'TT1M', 'Transtambo', 'Cajete', 'Pisojé', 2500.00, '05:30 - 20:00', 'ACTIVA')
+ON DUPLICATE KEY UPDATE code=VALUES(code);
 
--- Paraderos de la Ruta 1 (Barrio Bolívar -> Campanario / Variante Norte)
+-- Rutas adicionales reales de Popayán (sin stops asociados en este esquema)
+INSERT INTO routes (id, code, company, origin, destination, fare, schedule, status) VALUES
+(7,  'TP1BT', 'Transpubenza', 'La Paz', 'Los Naranjos', 2500.00, '05:30 - 21:00', 'ACTIVA'),
+(8,  'TP9BT', 'Transpubenza', 'Lomas de Granada', 'La Venta', 2500.00, '05:30 - 21:00', 'ACTIVA'),
+(9,  'SC1M',  'Sotracauca', 'Calle 72 Norte', 'Calle 72 Norte', 2500.00, '05:00 - 22:00', 'ACTIVA'),
+(10, 'SC7M',  'Sotracauca', 'Piendamó', 'Santa Teresa', 2500.00, '05:00 - 22:00', 'ACTIVA')
+ON DUPLICATE KEY UPDATE code=VALUES(code);
+
+
+-- Paraderos de la Ruta 1 (Barrio Bolívar -> Campanario)
 INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
 (1, 'Barrio Bolívar', 'Zona comercial central', 1),
 (1, 'Centro', 'Parque Caldas', 2),

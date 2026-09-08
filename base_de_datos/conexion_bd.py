@@ -20,7 +20,7 @@ import pymysql.cursors
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", "19971020"),
+    "password": os.getenv("DB_PASSWORD", ""),
     "database": os.getenv("DB_NAME", "movi_popayan_db"),
     "port": int(os.getenv("DB_PORT", 3306)),
     "charset": "utf8mb4",
