@@ -52,10 +52,10 @@ CREATE TABLE IF NOT EXISTS incidents (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==============================================================================
--- 6. DATOS INICIALES DE PRUEBA (POPAYÁN) — un solo set, sin duplicados
+-- 6. DATOS INICIALES DE PRUEBA (POPAYÁN) 
 -- ==============================================================================
 
--- Rutas (coincide con lo descrito en el manual técnico)
+-- Rutas 
 INSERT INTO routes (id, code, company, origin, destination, fare, schedule, status) VALUES
 (1, 'RUTA-1', 'Sotracauca', 'Barrio Bolívar', 'Campanario / Variante Norte', 2800.00, '05:30 - 21:30', 'ACTIVA'),
 (2, 'LINEA-2', 'Transpubenza', 'Lomas de Granada', 'Terminal de Transportes', 2800.00, '06:00 - 21:00', 'ACTIVA'),
@@ -65,7 +65,7 @@ INSERT INTO routes (id, code, company, origin, destination, fare, schedule, stat
 (6, 'TT1M', 'Transtambo', 'Cajete', 'Pisojé', 2500.00, '05:30 - 20:00', 'ACTIVA')
 ON DUPLICATE KEY UPDATE code=VALUES(code);
 
--- Rutas adicionales reales de Popayán (sin stops asociados en este esquema)
+-- Rutas adicionales reales de Popayán 
 INSERT INTO routes (id, code, company, origin, destination, fare, schedule, status) VALUES
 (7,  'TP1BT', 'Transpubenza', 'La Paz', 'Los Naranjos', 2500.00, '05:30 - 21:00', 'ACTIVA'),
 (8,  'TP9BT', 'Transpubenza', 'Lomas de Granada', 'La Venta', 2500.00, '05:30 - 21:00', 'ACTIVA'),
