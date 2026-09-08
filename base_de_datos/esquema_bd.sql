@@ -52,10 +52,10 @@ CREATE TABLE IF NOT EXISTS incidents (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==============================================================================
--- DATOS INICIALES DE PRUEBA (POPAYÁN)
+-- 6. DATOS INICIALES DE PRUEBA (POPAYÁN) — un solo set, sin duplicados
 -- ==============================================================================
 
--- Rutas
+-- Rutas (coincide con lo descrito en el manual técnico)
 INSERT INTO routes (id, code, company, origin, destination, fare, schedule, status) VALUES
 (1, 'RUTA-1', 'Sotracauca', 'Barrio Bolívar', 'Campanario / Variante Norte', 2800.00, '05:30 - 21:30', 'ACTIVA'),
 (2, 'LINEA-2', 'Transpubenza', 'Lomas de Granada', 'Terminal de Transportes', 2800.00, '06:00 - 21:00', 'ACTIVA'),
@@ -76,26 +76,12 @@ ON DUPLICATE KEY UPDATE code=VALUES(code);
 
 -- Paraderos de la Ruta 1 (Barrio Bolívar -> Campanario)
 INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
-(1, 'La Paz', 'Barrio La Paz', 1),
-(1, 'La Esmeralda', 'Galería La Esmeralda', 2),
-(1, 'Tomas Cipriano', 'Sector Tomas Cipriano', 3),
-(1, 'Los Naranjos', 'Barrio Los Naranjos', 4),
-(2, 'Lomas de Granada', 'Entrada principal etapa 1', 1),
-(2, 'Los Naranjos', 'Barrio Los Naranjos', 2),
-(2, 'Centro', 'Carrera 6ª / 7ª', 3),
-(2, 'La Venta', 'Sector La Venta', 4),
-(3, 'Calle 72 Norte', 'Anillo vial norte', 1),
-(4, 'Comuna 1', 'Zona urbana norte', 1),
-(4, 'La Esmeralda', 'Galería La Esmeralda', 2),
-(4, 'Santa Teresa', 'Sector Santa Teresa', 3),
-(5, 'Calle 5', 'Eje vial Calle 5', 1),
-(5, 'Comuna 2', 'Zona norte', 2),
-(6, 'Cajete', 'Vereda Cajete', 1),
-(6, 'Lomas de Granada', 'Entrada principal etapa 1', 2),
-(6, 'Galería La Esmeralda', 'Terminal de buses colectivos', 3),
-(6, 'Pisojé', 'Vereda Pisojé', 4);
+(1, 'Barrio Bolívar', 'Zona comercial central', 1),
+(1, 'Centro', 'Parque Caldas', 2),
+(1, 'Centro Comercial Campanario', 'Frente a Olímpica', 3),
+(1, 'Variante Norte', 'Glorieta Chirimía norte', 4);
 
--- Paraderos de la Ruta 2 (Lomas de Granada -> Terminal)
+-- Paraderos de la Ruta 2 - LINEA-2 (Lomas de Granada -> Terminal de Transportes)
 INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
 (2, 'Lomas de Granada', 'Entrada sector 3', 1),
 (2, 'Barrio La Esmeralda', 'Frente a droguería La Economía', 2),
@@ -108,13 +94,25 @@ INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
 (3, 'Centro Comercial Campanario', 'Frente a Olímpica', 2),
 (3, 'Hospital Universitario San José', 'Entrada consulta externa', 3);
 
--- Paraderos de la Ruta 9 (Terminal -> Variante Norte)
+-- Paraderos de la Ruta 9 (Terminal -> Variante Norte / Campanario)
 INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
 (4, 'Terminal de Transportes', 'Bahía principal', 1),
 (4, 'Centro Comercial Campanario', 'Entrada Panamericana', 2),
 (4, 'Variante Norte', 'Glorieta Chirimía norte', 3);
 
--- Despachos de prueba (con soporte de fecha y hora completa)
+-- Paraderos de la Ruta TL1BT (Calle 5, circular)
+INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
+(5, 'Calle 5', 'Eje vial Calle 5', 1),
+(5, 'Comuna 2', 'Zona norte', 2);
+
+-- Paraderos de la Ruta TT1M (Cajete -> Pisojé)
+INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
+(6, 'Cajete', 'Vereda Cajete', 1),
+(6, 'Lomas de Granada', 'Entrada principal etapa 1', 2),
+(6, 'Galería La Esmeralda', 'Terminal de buses colectivos', 3),
+(6, 'Pisojé', 'Vereda Pisojé', 4);
+
+-- Despachos de prueba
 INSERT INTO dispatches (route_id, bus_plate, departure_time, status) VALUES
 (1, 'TPK-102', '2026-09-02 06:30:00', 'EN_RUTA'),
 (3, 'SOT-451', '2026-09-02 07:00:00', 'FINALIZADO'),
@@ -123,4 +121,4 @@ INSERT INTO dispatches (route_id, bus_plate, departure_time, status) VALUES
 -- Incidentes viales de prueba
 INSERT INTO incidents (route_id, incident_type, description, reported_by, status) VALUES
 (1, 'CONGESTION', 'Tráfico pesado en el sector del centro histórico por obras viales.', 'Conductor', 'ACTIVO'),
-(5, 'DESVIO', 'Cierre temporal de vía cerca al puente por manifestación.', 'Pasajero', 'RESUELTO');
+(3, 'DESVIO', 'Cierre temporal de vía cerca al puente por manifestación.', 'Pasajero', 'RESUELTO');
