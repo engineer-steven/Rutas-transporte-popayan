@@ -18,8 +18,10 @@ def find_all_active() -> list[Route]:
     """Retorna todas las rutas con estado ACTIVA."""
     with get_cursor() as cursor:
         sql = """
-            SELECT id, code, company, origin, destination, fare, schedule, status
-            FROM routes
+            SELECT id, codigo AS code, empresa AS company, origen AS origin,
+                   destino AS destination, tarifa AS fare, horario AS schedule,
+                   estado AS status
+            FROM rutas
             ORDER BY id ASC
         """
         cursor.execute(sql)
@@ -29,8 +31,10 @@ def find_by_id(route_id: int) -> Route | None:
     """Busca y retorna una ruta por su ID primario."""
     with get_cursor() as cursor:
         sql = """
-            SELECT id, code, company, origin, destination, fare, schedule, status
-            FROM routes
+            SELECT id, codigo AS code, empresa AS company, origen AS origin,
+                   destino AS destination, tarifa AS fare, horario AS schedule,
+                   estado AS status
+            FROM rutas
             WHERE id = %s
             LIMIT 1
         """
@@ -43,14 +47,16 @@ def search_by_zone(zone_keyword: str) -> list[Route]:
     patron = f"%{zone_keyword.strip()}%"
     with get_cursor() as cursor:
         sql = """
-            SELECT DISTINCT r.id, r.code, r.company, r.origin, r.destination, 
-                            r.fare, r.schedule, r.status
-            FROM routes r
-            LEFT JOIN stops s ON r.id = s.route_id
-            WHERE r.origin LIKE %s 
-               OR r.destination LIKE %s 
-               OR s.name LIKE %s 
-               OR s.landmark_reference LIKE %s
+            SELECT DISTINCT r.id, r.codigo AS code, r.empresa AS company,
+                            r.origen AS origin, r.destino AS destination,
+                            r.tarifa AS fare, r.horario AS schedule,
+                            r.estado AS status
+            FROM rutas r
+            LEFT JOIN paraderos s ON r.id = s.ruta_id
+            WHERE r.origen LIKE %s
+               OR r.destino LIKE %s
+               OR s.nombre LIKE %s
+               OR s.referencia LIKE %s
             ORDER BY r.id ASC
         """
         cursor.execute(sql, (patron, patron, patron, patron))
@@ -60,7 +66,7 @@ def insert_route(code: str, company: str, origin: str, destination: str, fare: f
     """Inserta una nueva ruta en la base de datos."""
     with get_cursor(commit=True) as cursor:
         sql = """
-            INSERT INTO routes (code, company, origin, destination, fare, schedule, status)
+            INSERT INTO rutas (codigo, empresa, origen, destino, tarifa, horario, estado)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(sql, (
@@ -78,8 +84,9 @@ def update_route(route_id: int, code: str, company: str, origin: str, destinatio
     """Actualiza una ruta existente."""
     with get_cursor(commit=True) as cursor:
         sql = """
-            UPDATE routes
-            SET code = %s, company = %s, origin = %s, destination = %s, fare = %s, schedule = %s, status = %s
+            UPDATE rutas
+            SET codigo = %s, empresa = %s, origen = %s, destino = %s,
+                tarifa = %s, horario = %s, estado = %s
             WHERE id = %s
         """
         cursor.execute(sql, (
@@ -97,7 +104,7 @@ def update_route(route_id: int, code: str, company: str, origin: str, destinatio
 def delete_route(route_id: int) -> bool:
     """Elimina una ruta por su ID."""
     with get_cursor(commit=True) as cursor:
-        sql = "DELETE FROM routes WHERE id = %s"
+        sql = "DELETE FROM rutas WHERE id = %s"
         cursor.execute(sql, (route_id,))
         return cursor.rowcount > 0
 
@@ -107,26 +114,26 @@ def find_direct_trip(orig: str, dest: str) -> dict | None:
     patron_dest = f"%{dest.strip()}%"
 
     with get_cursor() as cursor:
-        # 1. Búsqueda por paraderos con dirección s1.stop_order < s2.stop_order
+        # 1. Búsqueda por paraderos con dirección s1.orden < s2.orden
         sql_paraderos = """
             SELECT 
                 r.id AS route_id,
-                r.code AS route_code,
-                r.company,
-                r.fare,
-                s1.name AS origin_stop_name,
-                s1.stop_order AS origin_order,
-                s2.name AS destination_stop_name,
-                s2.stop_order AS destination_order,
-                (s2.stop_order - s1.stop_order) AS stops_between
-            FROM routes r
-            INNER JOIN stops s1 ON r.id = s1.route_id
-            INNER JOIN stops s2 ON r.id = s2.route_id
-            WHERE (s1.name LIKE %s OR s1.landmark_reference LIKE %s)
-              AND (s2.name LIKE %s OR s2.landmark_reference LIKE %s)
-              AND s1.stop_order < s2.stop_order
-              AND (r.status = 'ACTIVA' OR r.status IS NULL)
-            ORDER BY stops_between ASC, r.fare ASC
+                r.codigo AS route_code,
+                r.empresa AS company,
+                r.tarifa AS fare,
+                s1.nombre AS origin_stop_name,
+                s1.orden AS origin_order,
+                s2.nombre AS destination_stop_name,
+                s2.orden AS destination_order,
+                (s2.orden - s1.orden) AS stops_between
+            FROM rutas r
+            INNER JOIN paraderos s1 ON r.id = s1.ruta_id
+            INNER JOIN paraderos s2 ON r.id = s2.ruta_id
+            WHERE (s1.nombre LIKE %s OR s1.referencia LIKE %s)
+              AND (s2.nombre LIKE %s OR s2.referencia LIKE %s)
+              AND s1.orden < s2.orden
+              AND (r.estado = 'ACTIVA' OR r.estado IS NULL)
+            ORDER BY stops_between ASC, r.tarifa ASC
             LIMIT 1
         """
         cursor.execute(sql_paraderos, (patron_orig, patron_orig, patron_dest, patron_dest))
@@ -138,18 +145,18 @@ def find_direct_trip(orig: str, dest: str) -> dict | None:
         sql_general = """
             SELECT 
                 r.id AS route_id,
-                r.code AS route_code,
-                r.company,
-                r.fare,
-                r.origin AS origin_stop_name,
+                r.codigo AS route_code,
+                r.empresa AS company,
+                r.tarifa AS fare,
+                r.origen AS origin_stop_name,
                 1 AS origin_order,
-                r.destination AS destination_stop_name,
+                r.destino AS destination_stop_name,
                 6 AS destination_order,
                 5 AS stops_between
-            FROM routes r
-            WHERE r.origin LIKE %s
-              AND r.destination LIKE %s
-              AND (r.status = 'ACTIVA' OR r.status IS NULL)
+            FROM rutas r
+            WHERE r.origen LIKE %s
+              AND r.destino LIKE %s
+              AND (r.estado = 'ACTIVA' OR r.estado IS NULL)
             LIMIT 1
         """
         cursor.execute(sql_general, (patron_orig, patron_dest))
@@ -163,25 +170,25 @@ def find_transfer_trip(orig: str, dest: str) -> dict | None:
     with get_cursor() as cursor:
         sql = """
             SELECT 
-                r1.id AS r1_id, r1.code AS r1_code, r1.company AS r1_company, r1.fare AS r1_fare,
-                s_orig.name AS boarding_stop,
-                s_trans1.name AS transfer_stop,
-                r2.id AS r2_id, r2.code AS r2_code, r2.company AS r2_company, r2.fare AS r2_fare,
-                s_dest.name AS alighting_stop,
-                ((s_trans1.stop_order - s_orig.stop_order) + (s_dest.stop_order - s_trans2.stop_order)) AS total_stops
-            FROM routes r1
-            INNER JOIN stops s_orig ON r1.id = s_orig.route_id
-            INNER JOIN stops s_trans1 ON r1.id = s_trans1.route_id
-            INNER JOIN routes r2 ON r1.id <> r2.id
-            INNER JOIN stops s_trans2 ON r2.id = s_trans2.route_id
-            INNER JOIN stops s_dest ON r2.id = s_dest.route_id
-            WHERE (s_orig.name LIKE %s OR s_orig.landmark_reference LIKE %s)
-              AND (s_dest.name LIKE %s OR s_dest.landmark_reference LIKE %s)
-              AND s_trans1.stop_order > s_orig.stop_order
-              AND s_dest.stop_order > s_trans2.stop_order
-              AND (s_trans1.name = s_trans2.name OR s_trans1.landmark_reference = s_trans2.landmark_reference)
-              AND (r1.status = 'ACTIVA' OR r1.status IS NULL)
-              AND (r2.status = 'ACTIVA' OR r2.status IS NULL)
+                r1.id AS r1_id, r1.codigo AS r1_code, r1.empresa AS r1_company,
+                r1.tarifa AS r1_fare, s_orig.nombre AS boarding_stop,
+                s_trans1.nombre AS transfer_stop,
+                r2.id AS r2_id, r2.codigo AS r2_code, r2.empresa AS r2_company,
+                r2.tarifa AS r2_fare, s_dest.nombre AS alighting_stop,
+                ((s_trans1.orden - s_orig.orden) + (s_dest.orden - s_trans2.orden)) AS total_stops
+            FROM rutas r1
+            INNER JOIN paraderos s_orig ON r1.id = s_orig.ruta_id
+            INNER JOIN paraderos s_trans1 ON r1.id = s_trans1.ruta_id
+            INNER JOIN rutas r2 ON r1.id <> r2.id
+            INNER JOIN paraderos s_trans2 ON r2.id = s_trans2.ruta_id
+            INNER JOIN paraderos s_dest ON r2.id = s_dest.ruta_id
+            WHERE (s_orig.nombre LIKE %s OR s_orig.referencia LIKE %s)
+              AND (s_dest.nombre LIKE %s OR s_dest.referencia LIKE %s)
+              AND s_trans1.orden > s_orig.orden
+              AND s_dest.orden > s_trans2.orden
+              AND (s_trans1.nombre = s_trans2.nombre OR s_trans1.referencia = s_trans2.referencia)
+              AND (r1.estado = 'ACTIVA' OR r1.estado IS NULL)
+              AND (r2.estado = 'ACTIVA' OR r2.estado IS NULL)
             ORDER BY total_stops ASC
             LIMIT 1
         """
@@ -192,9 +199,11 @@ def get_active_incidents(route_id: int) -> list[dict]:
     """Obtiene los incidentes viales activos reportados para una ruta."""
     with get_cursor() as cursor:
         sql = """
-            SELECT id, incident_type, description, reported_by, reported_at, status
-            FROM incidents
-            WHERE route_id = %s AND (status = 'ACTIVO' OR status IS NULL)
+            SELECT id, tipo_incidente AS incident_type, descripcion AS description,
+                   reportado_por AS reported_by, fecha_reporte AS reported_at,
+                   estado AS status
+            FROM incidentes
+            WHERE ruta_id = %s AND (estado = 'ACTIVO' OR estado IS NULL)
             ORDER BY id DESC
         """
         cursor.execute(sql, (route_id,))
@@ -203,7 +212,7 @@ def get_active_incidents(route_id: int) -> list[dict]:
 def get_route_stops_count(route_id: int) -> int:
     """Cuenta la cantidad de paraderos registrados para una ruta."""
     with get_cursor() as cursor:
-        sql = "SELECT COUNT(*) AS total FROM stops WHERE route_id = %s"
+        sql = "SELECT COUNT(*) AS total FROM paraderos WHERE ruta_id = %s"
         cursor.execute(sql, (route_id,))
         res = cursor.fetchone()
         return int(res["total"]) if res and res.get("total") else 0

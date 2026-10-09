@@ -102,7 +102,7 @@ class RoutesService(ServiceBase):
     def plan_trip(ctx, origin_keyword, destination_keyword):
         """
         Algoritmo de planificación de viaje directo:
-        1. Valida secuencia direccional de paraderos (s1.stop_order < s2.stop_order).
+        1. Valida secuencia direccional de paraderos (s1.orden < s2.orden).
         2. Calcula número de paradas intermedias.
         3. Estima tiempo de recorrido (~4 min por paradero en Popayán).
         """

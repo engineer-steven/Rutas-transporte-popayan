@@ -3,7 +3,7 @@
 ==============================================================================
 MÓDULO: CONEXIÓN A BASE DE DATOS (MySQL)
 ==============================================================================
-Gestiona la conexión centralizada a la base de datos MySQL (movi_popayan_db).
+Gestiona la conexión centralizada a la base de datos MySQL (enrutate_db).
 """
 
 import os
@@ -21,7 +21,7 @@ DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "user": os.getenv("DB_USER", "root"),
     "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "movi_popayan_db"),
+    "database": os.getenv("DB_NAME", "enrutate_db"),
     "port": int(os.getenv("DB_PORT", 3306)),
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,

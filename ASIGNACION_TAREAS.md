@@ -1,4 +1,4 @@
-# 👥 Asignación de Tareas por Ramas - MoviPopayán
+# 👥 Asignación de Tareas por Ramas - EnRútate
 
 Este documento describe la división del trabajo del proyecto en **4 ramas independientes** para que cada integrante del equipo trabaje en su propio módulo sin generar conflictos de código.
 
@@ -22,12 +22,12 @@ Este documento describe la división del trabajo del proyecto en **4 ramas indep
 
 **Tareas a desarrollar:**
 1. En `base_de_datos/esquema_bd.sql`:
-   - Crear la base de datos `movi_popayan_db`.
+   - Crear la base de datos `enrutate_db`.
    - Definir las 4 tablas con sus tipos de datos, llaves primarias y foráneas:
-     - `routes`: Información general de rutas (código, empresa, origen, destino, tarifa, horario, estado).
-     - `stops`: Paraderos ordenados de cada ruta (`stop_order`, punto de referencia).
-     - `dispatches`: Despachos de buses con placa y hora de salida.
-     - `incidents`: Reportes de eventos en ruta (congestión, accidentes, etc.).
+     - `rutas`: Información general (código, empresa, origen, destino, tarifa, horario, estado).
+     - `paraderos`: Paraderos ordenados por `orden`, con su punto de referencia.
+     - `despachos`: Despachos de buses con placa y hora de salida.
+     - `incidentes`: Reportes de eventos en ruta (congestión, accidentes, etc.).
    - Insertar datos iniciales de prueba representativos de Popayán (ej: Sotracauca, Transpubenza).
 2. En `base_de_datos/conexion_bd.py`:
    - Configurar los parámetros de conexión a MySQL.
@@ -46,7 +46,7 @@ En `microservicios/servicio_rutas/servidor_rutas.py`:
    - `get_route_by_id(ctx, route_id)`: Buscar y retornar el detalle de una ruta por su ID.
    - `search_routes_by_zone(ctx, zone_keyword)`: Filtrar rutas que pasen por una zona clave (ej: Campanario, Centro).
    - `add_route(ctx, code, company, origin, destination, fare, schedule)`: Registrar una nueva ruta en MySQL.
-   - `plan_trip(ctx, origin_keyword, destination_keyword)`: **[Lógica No Plana]** Planificador inteligente de viajes entre 2 puntos validando la secuencia y orden de los paraderos (`stop_order`), calculando cantidad de paradas, tarifa y tiempo estimado.
+   - `plan_trip(ctx, origin_keyword, destination_keyword)`: **[Lógica No Plana]** Planificador inteligente de viajes entre 2 puntos validando la secuencia y orden de los paraderos (`orden`), calculando cantidad de paradas, tarifa y tiempo estimado.
 3. Configurar la aplicación WSGI con Spyne y levantar el servidor en `http://127.0.0.1:8001/?wsdl`.
 
 ---

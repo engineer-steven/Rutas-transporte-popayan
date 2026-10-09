@@ -24,13 +24,14 @@ def _row_to_incident(row: dict) -> Incident:
     )
 
 def find_stops_by_route(route_id: int) -> list[Stop]:
-    """Retorna los paraderos de una ruta ordenados por stop_order."""
+    """Retorna los paraderos de una ruta ordenados por su campo orden."""
     with get_cursor() as cursor:
         sql = """
-            SELECT id, route_id, name, landmark_reference, stop_order
-            FROM stops
-            WHERE route_id = %s
-            ORDER BY stop_order ASC
+            SELECT id, ruta_id AS route_id, nombre AS name,
+                   referencia AS landmark_reference, orden AS stop_order
+            FROM paraderos
+            WHERE ruta_id = %s
+            ORDER BY orden ASC
         """
         cursor.execute(sql, (route_id,))
         return [_row_to_stop(row) for row in cursor.fetchall()]
@@ -39,9 +40,10 @@ def find_dispatch(route_id: int, bus_plate: str) -> dict | None:
     """Busca el despacho más reciente de un bus por placa en una ruta."""
     with get_cursor() as cursor:
         sql = """
-            SELECT id, route_id, bus_plate, departure_time, status
-            FROM dispatches
-            WHERE route_id = %s AND bus_plate = %s
+            SELECT id, ruta_id AS route_id, placa_bus AS bus_plate,
+                   hora_salida AS departure_time, estado AS status
+            FROM despachos
+            WHERE ruta_id = %s AND placa_bus = %s
             ORDER BY id DESC
             LIMIT 1
         """
@@ -49,10 +51,10 @@ def find_dispatch(route_id: int, bus_plate: str) -> dict | None:
         return cursor.fetchone()
 
 def insert_incident(route_id: int, incident_type: str, description: str, reported_by: str) -> bool:
-    """Registra una novedad vial en la tabla incidents."""
+    """Registra una novedad vial en la tabla incidentes."""
     with get_cursor(commit=True) as cursor:
         sql = """
-            INSERT INTO incidents (route_id, incident_type, description, reported_by, status)
+            INSERT INTO incidentes (ruta_id, tipo_incidente, descripcion, reportado_por, estado)
             VALUES (%s, %s, %s, %s, 'ACTIVO')
         """
         cursor.execute(sql, (
@@ -67,9 +69,11 @@ def find_incidents_by_route(route_id: int) -> list[Incident]:
     """Retorna las incidencias activas reportadas para una ruta."""
     with get_cursor() as cursor:
         sql = """
-            SELECT id, route_id, incident_type, description, reported_by, reported_at, status
-            FROM incidents
-            WHERE route_id = %s AND (status = 'ACTIVO' OR status IS NULL)
+            SELECT id, ruta_id AS route_id, tipo_incidente AS incident_type,
+                   descripcion AS description, reportado_por AS reported_by,
+                   fecha_reporte AS reported_at, estado AS status
+            FROM incidentes
+            WHERE ruta_id = %s AND (estado = 'ACTIVO' OR estado IS NULL)
             ORDER BY id DESC
         """
         cursor.execute(sql, (route_id,))
