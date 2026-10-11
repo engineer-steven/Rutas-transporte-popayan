@@ -7,48 +7,26 @@ Gestiona la conexión centralizada a la base de datos MySQL (movi_popayan_db).
 """
 
 import os
-from contextlib import contextmanager
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 import pymysql
-import pymysql.cursors
+from pymysql.cursors import DictCursor
 
+# Configuración de los parámetros de conexión con variables de entorno y valores por defecto
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", "19971020"),
-    "database": os.getenv("DB_NAME", "movi_popayan_db"),
-    "port": int(os.getenv("DB_PORT", 3306)),
-    "charset": "utf8mb4",
-    "cursorclass": pymysql.cursors.DictCursor,
-    "autocommit": False
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', 'Admin#123456'),
+    'database': os.getenv('DB_NAME', 'movi_popayan_db'),
+    'port': int(os.getenv('DB_PORT', 3306)),
+    'charset': 'utf8mb4',
+    'cursorclass': DictCursor
 }
 
 def get_db_connection():
     """
-    Establece y retorna una conexión activa a MySQL con DictCursor.
+    Implementa la función que establece y retorna la conexión activa a MySQL.
+    
+    Retorna:
+        Objeto de conexión a la base de datos listo para ejecutar consultas.
     """
-    return pymysql.connect(**DB_CONFIG)
-
-@contextmanager
-def get_cursor(commit: bool = False):
-    """
-    Context manager seguro: abre conexión y cursor con DictCursor,
-    realiza commit o rollback según corresponda y garantiza el cierre.
-    """
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            yield cursor
-            if commit:
-                conn.commit()
-    except Exception:
-        if commit:
-            conn.rollback()
-        raise
-    finally:
-        conn.close()
+    connection = pymysql.connect(**DB_CONFIG)
+    return connection
