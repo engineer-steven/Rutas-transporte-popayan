@@ -43,7 +43,7 @@
 #
 #   base_de_datos/esquema_bd.sql
 #
-# Esto creará la base de datos 'movi_popayan_db' con sus tablas y datos iniciales.
+# Esto creará la base de datos 'enrutate_db' con sus tablas y datos iniciales.
 # ------------------------------------------------------------------------------
 # PASO 5: EJECUTAR LOS SERVIDORES
 # ------------------------------------------------------------------------------

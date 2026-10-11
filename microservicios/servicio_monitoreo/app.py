@@ -11,9 +11,9 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from config import Config
-from routes.login import login_bp, init_limiter
-from routes.despacho import despacho_bp
-from routes.alertas import alertas_bp
+from rutas.login import login_bp, init_limiter
+from rutas.despacho import despacho_bp
+from rutas.alertas import alertas_bp
 
 
 def create_app():
@@ -107,3 +107,6 @@ def create_app():
 
 
 app = create_app()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=Config.SERVER_PORT, debug=True)

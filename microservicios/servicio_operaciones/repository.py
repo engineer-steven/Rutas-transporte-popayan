@@ -28,7 +28,7 @@ def find_stops_by_route(route_id: int) -> list[Stop]:
     with get_cursor() as cursor:
         sql = """
             SELECT id, route_id, name, landmark_reference, stop_order
-            FROM stops
+            FROM paradas
             WHERE route_id = %s
             ORDER BY stop_order ASC
         """
@@ -40,7 +40,7 @@ def find_dispatch(route_id: int, bus_plate: str) -> dict | None:
     with get_cursor() as cursor:
         sql = """
             SELECT id, route_id, bus_plate, departure_time, status
-            FROM dispatches
+            FROM despachos
             WHERE route_id = %s AND bus_plate = %s
             ORDER BY id DESC
             LIMIT 1
@@ -49,10 +49,10 @@ def find_dispatch(route_id: int, bus_plate: str) -> dict | None:
         return cursor.fetchone()
 
 def insert_incident(route_id: int, incident_type: str, description: str, reported_by: str) -> bool:
-    """Registra una novedad vial en la tabla incidents."""
+    """Registra una novedad vial en la tabla incidentes."""
     with get_cursor(commit=True) as cursor:
         sql = """
-            INSERT INTO incidents (route_id, incident_type, description, reported_by, status)
+            INSERT INTO incidentes (route_id, incident_type, description, reported_by, status)
             VALUES (%s, %s, %s, %s, 'ACTIVO')
         """
         cursor.execute(sql, (
@@ -68,7 +68,7 @@ def find_incidents_by_route(route_id: int) -> list[Incident]:
     with get_cursor() as cursor:
         sql = """
             SELECT id, route_id, incident_type, description, reported_by, reported_at, status
-            FROM incidents
+            FROM incidentes
             WHERE route_id = %s AND (status = 'ACTIVO' OR status IS NULL)
             ORDER BY id DESC
         """

@@ -1,4 +1,4 @@
-# MoviPopayán - Sistema de Microservicios de Transporte Público
+# EnRutate - Sistema de Microservicios de Transporte Público
 
 Plataforma basada en **Microservicios Web SOAP y REST** (Python + Spyne + Flask + MySQL) para la gestión de rutas de transporte urbano, analítica avanzada de viajes, control de despachos, telemetría de aforo y alertas en la ciudad de Popayán.
 
@@ -14,7 +14,7 @@ proyecto rutas/
 ├── GUIA_PRUEBAS_SOAP_Y_FUNCIONES.md         # Guía de pruebas para microservicios SOAP
 ├── GUIA_PRUEBAS_REST_MICROSERVICIO_3.md     # Guía completa del Microservicio 3 REST (JWT + 5 Endpoints)
 ├── requirements.txt                         # Dependencias Python (Spyne, Flask, PyJWT, PyMySQL, etc.)
-├── MoviPopayan_Microservicios_Entrega.zip   # Archivo comprimido listo para la entrega oficial
+├── EnRutate_Microservicios_Entrega.zip      # Archivo comprimido listo para la entrega oficial
 │
 ├── base_de_datos/                           # Esquema de persistencia
 │   └── esquema_bd.sql                       # Tablas y datos de prueba completos con inserts
@@ -33,7 +33,7 @@ proyecto rutas/
 │       ├── auth.py                          # Seguridad JWT Bearer / API Key y @token_required
 │       ├── repository.py                    # Acceso a datos de usuarios, calificaciones y telemetría
 │       ├── service.py                       # 5 Lógicas No Lineales de alta relevancia
-│       ├── routes.py                        # Endpoints REST (Flask Blueprints)
+│       ├── rutas/                           # Endpoints REST (Flask Blueprints)
 │       └── server.py                        # Servidor REST ejecutable
 │
 └── scripts/
@@ -68,10 +68,15 @@ Cada microservicio cuenta con 6 archivos con responsabilidades estrictamente sep
 
 ### Tablas del Sistema:
 
-1. **`routes`**: Información de rutas de buses (código, empresa como _Sotracauca_ o _Transpubenza_, origen, destino, tarifa, horario y estado).
-2. **`stops`**: Paraderos georreferenciados asociados a cada ruta con orden secuencial (`stop_order`).
-3. **`dispatches`**: Despachos de vehículos con placa (`bus_plate`) y fecha/hora de salida (`departure_time`).
-4. **`incidents`**: Novedades y alertas viales activas o resueltas (congestión, accidentes, desvíos).
+1. **`rutas`**: Información de rutas de buses (código, empresa como _Sotracauca_ o _Transpubenza_, origen, destino, tarifa, horario y estado).
+2. **`paradas`**: Paraderos asociados a cada ruta con orden secuencial (`stop_order`).
+3. **`despachos`**: Despachos de vehículos con placa (`bus_plate`) y fecha/hora de salida (`departure_time`).
+4. **`incidentes`**: Novedades y alertas viales activas o resueltas (congestión, accidentes, desvíos).
+5. **`usuarios`**: Usuarios para autenticación JWT del servicio SOAP.
+6. **`usuarios_api`**: Usuarios, roles y claves API del servicio REST.
+7. **`calificaciones_servicio`**: Calificaciones de calidad y satisfacción del servicio.
+8. **`telemetria_buses`**: Lecturas de ocupación y velocidad de los buses.
+9. **`alertas_emergencia`**: Alertas críticas de seguridad y emergencias.
 
 ---
 
@@ -97,7 +102,7 @@ Expone operaciones CRUD básicas y **5 Lógicas No Planas** con algoritmos avanz
    - Algoritmo de planificación multimodal con transbordo entre 2 rutas cuando no existe conexión directa.
    - Encuentra el nodo o paradero común de cambio (_Centro/Parque Caldas_ o _Terminal_), calcula tarifa combinada y tiempo total con margen de espera.
 3. **`calculate_route_congestion_index(route_id)`**:
-   - Cruza la ruta con la tabla de incidentes activos (`incidents`).
+   - Cruza la ruta con la tabla de incidentes activos (`incidentes`).
    - Aplica ponderaciones por tipo de evento (+20 min accidente, +15 min desvío, +10 min congestión) y calcula el índice de confiabilidad (0-100%) y nivel (_NORMAL_, _MODERADO_, _ALTO_, _CRÍTICO_).
 4. **`simulate_traffic_schedule(route_id, departure_hour)`**:
    - Evalúa la hora de salida respecto a las horas pico de Popayán (_06:30–08:30_, _11:45–13:45_, _17:30–19:30_).

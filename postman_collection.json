@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "popayan-transporte-microservicios-2026",
-    "name": "Sistema Transporte Popayán - Microservicios",
+    "name": "EnRutate - Microservicios",
     "description": "Colección completa con todos los endpoints de los 3 microservicios listos para ejecutar con un solo clic.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

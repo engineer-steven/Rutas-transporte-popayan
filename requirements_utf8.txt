@@ -1,0 +1,85 @@
+﻿# ==============================================================================
+# GUÃA PASO A PASO: CONFIGURACIÃ“N DEL ENTORNO VIRTUAL Y EJECUCIÃ“N
+# ==============================================================================
+#
+# REQUISITOS PREVIOS:
+#   - Python 3.8 o superior instalado en el sistema.
+#   - Servidor MySQL activo en el puerto 3306 (XAMPP, WAMP o MySQL Workbench).
+#
+# ------------------------------------------------------------------------------
+# PASO 1: CREAR EL ENTORNO VIRTUAL
+# ------------------------------------------------------------------------------
+# Abre una terminal (PowerShell, CMD o Git Bash) en la raÃ­z del proyecto y ejecuta:
+#
+#   python -m venv venv
+#
+# ------------------------------------------------------------------------------
+# PASO 2: ACTIVAR EL ENTORNO VIRTUAL
+# ------------------------------------------------------------------------------
+# Dependiendo de la terminal que uses en Windows:
+#
+#   - En PowerShell:
+#       Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+#       .\venv\Scripts\Activate.ps1
+#
+#   - En SÃ­mbolo del Sistema (CMD):
+#       venv\Scripts\activate.bat
+#
+#   - En Git Bash:
+#       source venv/Scripts/activate
+#
+# ------------------------------------------------------------------------------
+# PASO 3: INSTALAR ESTAS DEPENDENCIAS
+# ------------------------------------------------------------------------------
+# Con el entorno virtual activo, ejecuta:
+#
+#   pip install --upgrade pip
+#   pip install -r requirements.txt
+#
+# ------------------------------------------------------------------------------
+# PASO 4: IMPORTAR LA BASE DE DATOS
+# ------------------------------------------------------------------------------
+# Abre tu gestor MySQL (phpMyAdmin, Workbench o consola) y ejecuta el archivo:
+#
+#   base_de_datos/esquema_bd.sql
+#
+# Esto crearÃ¡ la base de datos 'enrutate_db' con sus tablas y datos iniciales.
+# ------------------------------------------------------------------------------
+# PASO 5: EJECUTAR LOS SERVIDORES
+# ------------------------------------------------------------------------------
+# Puedes iniciar ambos microservicios con doble clic en:
+#
+#   ejecutar_servidores/iniciar_servidores.bat
+#
+# O ejecutarlos individualmente por terminal:( recomendado)
+#
+#  cd "c:\Users\Usuario\Downloads\proyecto rutas\microservicios\servicio_rutas"
+#  python server.py
+
+#
+#cd "c:\Users\Usuario\Downloads\proyecto rutas\microservicios\servicio_operaciones"
+#python server.py
+
+# WSDL Disponibles:
+#   - Rutas (Puerto 8001):       http://127.0.0.1:8001/?wsdl
+#   - Operaciones (Puerto 8002): http://127.0.0.1:8002/?wsdl
+#   - Monitoreo REST (Puerto 5003): http://127.0.0.1:5003/
+#
+# ------------------------------------------------------------------------------
+# PARA DESACTIVAR EL ENTORNO VIRTUAL AL TERMINAR:
+# ------------------------------------------------------------------------------
+#   deactivate
+# ==============================================================================
+# LISTA DE DEPENDENCIAS DE PYTHON:
+# ==============================================================================
+spyne==2.14.0
+PyMySQL==1.1.2
+cryptography>=42.0.0
+lxml==6.0.2
+requests==2.32.5
+zeep==4.3.2
+python-dotenv==1.0.1
+Flask>=3.0.0
+PyJWT>=2.8.0
+Flask-Cors>=4.0.0
+Flask-Limiter>=3.5.0

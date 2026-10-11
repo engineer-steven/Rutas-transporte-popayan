@@ -6,8 +6,8 @@ workspace:
 
 cloudResources:
   collections:
-    ../postman/collections/Sistema Transporte Popayán - Microservicios: 4968fa7d-c0b8-42a6-944a-efdb9871e8b3
-    ../postman/collections/Sistema Transporte Popayán - Microservicios Copy: 94be1d15-2603-4ddb-b7bd-5cbc123c0c96
+    ../postman/collections/EnRutate - Microservicios: 4968fa7d-c0b8-42a6-944a-efdb9871e8b3
+    ../postman/collections/EnRutate - Microservicios Copia: 94be1d15-2603-4ddb-b7bd-5cbc123c0c96
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

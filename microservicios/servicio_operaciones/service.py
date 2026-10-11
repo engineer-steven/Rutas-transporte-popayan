@@ -1,6 +1,6 @@
 """
 service.py - Re-exporta app para compatibilidad retroactiva.
-La aplicacion Flask ahora se ensambla con Blueprints en app.py y routes/.
+La aplicacion Flask ahora se ensambla con Blueprints en app.py y rutas/.
 """
 from app import app
 

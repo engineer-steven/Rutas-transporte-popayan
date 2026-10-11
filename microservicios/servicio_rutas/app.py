@@ -9,8 +9,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 from config import Config
-from routes.rutas import rutas_bp
-from routes.logicas import logicas_bp
+from rutas.rutas import rutas_bp
+from rutas.logicas import logicas_bp
 
 
 def create_app():
@@ -59,3 +59,6 @@ def create_app():
 
 
 app = create_app()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=Config.SERVER_PORT, debug=True)

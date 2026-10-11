@@ -1,4 +1,4 @@
-# 🚌 Guía Completa de Microservicios SOAP - MoviPopayán
+# 🚌 Guía Completa de Microservicios SOAP - EnRutate
 
 Este documento describe a detalle cada una de las funciones implementadas en los **dos microservicios SOAP** del sistema de transporte de Popayán, explicando:
 1. **¿Qué hace y para qué sirve en la vida real?** (Contexto aplicado a la movilidad de Popayán).
@@ -87,7 +87,7 @@ proyecto rutas/
 
 ### 🛠️ Archivos de soporte en la raíz del proyecto
 
-* **`base_de_datos/esquema_bd.sql`**: Script en lenguaje SQL que crea la base de datos `movi_popayan_db`, sus 4 tablas (`routes`, `stops`, `dispatches`, `incidents`) y puebla la información con rutas reales de Popayán (Transpubenza, Sotracauca).
+* **`base_de_datos/esquema_bd.sql`**: Script SQL que crea la base de datos `enrutate_db`, sus tablas (`rutas`, `paradas`, `despachos`, `incidentes`, `usuarios`, `usuarios_api`, `calificaciones_servicio`, `telemetria_buses` y `alertas_emergencia`) y carga datos de prueba de Popayán (Transpubenza, Sotracauca).
 * **`base_de_datos/conexion_bd.py`**: Módulo de conexión a MySQL desarrollado para la rama de base de datos (`feature/base-de-datos`). Es el entregable asignado a Duver en el plan de trabajo.
 * **`.vscode/settings.json`**: Le indica a Visual Studio Code la ruta exacta del intérprete Python dentro de la carpeta `venv/` y añade los microservicios a la ruta de búsqueda para evitar advertencias de importación falsas.
 * **`.env.example`**: Plantilla de ejemplo sin contraseñas privadas. Se sube a GitHub para que cualquier profesor o compañero que descargue el repositorio sepa cómo configurar su base de datos.

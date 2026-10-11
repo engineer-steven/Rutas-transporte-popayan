@@ -1,11 +1,12 @@
-# 📡 Guía del Microservicio 3: Transporte Popayán (REST - Estándar Cafetería)
+# 📡 Guía del Microservicio 3: EnRutate (REST - Estándar Cafetería)
 
-**MoviPopayán - Sistema Integral de Transporte Público**  
+**EnRutate - Sistema Integral de Transporte Público**
+
 **Puerto Asignado:** `5003`  
 **Protocolo:** RESTful (JSON)  
 **Seguridad:** Autenticación por JWT Bearer Token y API Key (`X-API-KEY: 123`)  
 **Estructura:** Idéntica al proyecto de clase `cafeteria_api_GPPD_jwt`  
-**Base de Datos:** MySQL (`movi_popayan_db`)
+**Base de Datos:** MySQL (`enrutate_db`)
 
 ---
 
@@ -18,7 +19,7 @@ microservicios/servicio_monitoreo/
 ├── server.py             <- Punto de entrada ejecutable en puerto 5003
 ├── utils/
 │   └── auth.py           <- Decoradores @require_api_key y @require_jwt (idénticos a cafetería)
-└── routes/
+└── rutas/
     ├── login.py          <- Endpoints POST /register y POST /login (con JWT)
     └── monitoreo.py      <- Las 5 funcionalidades no lineales comprensibles para Popayán
 ```

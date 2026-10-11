@@ -8,7 +8,7 @@ def find_user_by_username(username: str):
     """Busca un usuario por su nombre de usuario."""
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT id, username, password_hash, full_name, role, api_key, created_at FROM users WHERE username = %s LIMIT 1",
+            "SELECT id, username, password_hash, full_name, role, api_key, created_at FROM usuarios_api WHERE username = %s LIMIT 1",
             (username,)
         )
         return cursor.fetchone()
@@ -17,7 +17,7 @@ def find_user_by_id(user_id: int):
     """Busca un usuario por su ID primario."""
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT id, username, full_name, role, api_key, created_at FROM users WHERE id = %s LIMIT 1",
+            "SELECT id, username, full_name, role, api_key, created_at FROM usuarios_api WHERE id = %s LIMIT 1",
             (user_id,)
         )
         return cursor.fetchone()
@@ -26,7 +26,7 @@ def find_user_by_api_key(api_key: str):
     """Busca un usuario activo mediante su API Key asignada."""
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT id, username, full_name, role, api_key, created_at FROM users WHERE api_key = %s LIMIT 1",
+            "SELECT id, username, full_name, role, api_key, created_at FROM usuarios_api WHERE api_key = %s LIMIT 1",
             (api_key,)
         )
         return cursor.fetchone()
@@ -40,7 +40,7 @@ def create_user(username: str, password: str, role: str = "OPERADOR") -> bool:
     full_name = f"Usuario {username.strip().capitalize()}"
     with get_cursor(commit=True) as cursor:
         cursor.execute(
-            "INSERT INTO users (username, password_hash, full_name, role, api_key) VALUES (%s, %s, %s, %s, %s)",
+            "INSERT INTO usuarios_api (username, password_hash, full_name, role, api_key) VALUES (%s, %s, %s, %s, %s)",
             (username.strip(), password_hash, full_name, role, api_key)
         )
         return cursor.rowcount > 0
@@ -53,7 +53,7 @@ def find_route_by_id(route_id: int):
     """Obtiene los datos base de una ruta de transporte de Popayán."""
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT id, code, company, origin, destination, fare, schedule, status FROM routes WHERE id = %s",
+            "SELECT id, code, company, origin, destination, fare, schedule, status FROM rutas WHERE id = %s",
             (route_id,)
         )
         return cursor.fetchone()
@@ -62,7 +62,7 @@ def get_stops_count(route_id: int) -> int:
     """Retorna la cantidad de paraderos registrados para una ruta."""
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT COUNT(*) AS total FROM stops WHERE route_id = %s",
+            "SELECT COUNT(*) AS total FROM paradas WHERE route_id = %s",
             (route_id,)
         )
         row = cursor.fetchone()
@@ -72,7 +72,7 @@ def get_active_incidents_count(route_id: int) -> int:
     """Cuenta los incidentes activos actualmente en una ruta."""
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT COUNT(*) AS total FROM incidents WHERE route_id = %s AND status = 'ACTIVO'",
+            "SELECT COUNT(*) AS total FROM incidentes WHERE route_id = %s AND status = 'ACTIVO'",
             (route_id,)
         )
         row = cursor.fetchone()
@@ -83,8 +83,8 @@ def get_intersecting_routes_by_landmark(landmark: str, exclude_route_id: int = N
     with get_cursor() as cursor:
         query = """
             SELECT DISTINCT r.id, r.code, r.company, r.origin, r.destination, s.name AS stop_name
-            FROM routes r
-            JOIN stops s ON r.id = s.route_id
+            FROM rutas r
+            JOIN paradas s ON r.id = s.route_id
             WHERE (s.name LIKE %s OR s.landmark_reference LIKE %s)
         """
         params = [f"%{landmark}%", f"%{landmark}%"]
@@ -104,7 +104,7 @@ def get_recent_ratings_by_route(route_id: int):
     with get_cursor() as cursor:
         cursor.execute(
             "SELECT final_score, punctuality_score, comfort_score, driver_score, safety_score, category "
-            "FROM service_ratings WHERE route_id = %s ORDER BY created_at DESC LIMIT 30",
+            "FROM calificaciones_servicio WHERE route_id = %s ORDER BY created_at DESC LIMIT 30",
             (route_id,)
         )
         return cursor.fetchall() or []
@@ -116,7 +116,7 @@ def save_service_rating(route_id: int, company: str, user_id: int, punctuality_s
     with get_cursor(commit=True) as cursor:
         cursor.execute(
             """
-            INSERT INTO service_ratings 
+            INSERT INTO calificaciones_servicio
             (route_id, company, user_id, punctuality_score, comfort_score, driver_score, 
              safety_score, final_score, category, comment)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -137,7 +137,7 @@ def save_bus_telemetry(route_id: int, bus_plate: str, current_passengers: int, m
     with get_cursor(commit=True) as cursor:
         cursor.execute(
             """
-            INSERT INTO bus_telemetry 
+            INSERT INTO telemetria_buses
             (route_id, bus_plate, current_passengers, max_capacity, occupancy_ratio, 
              current_speed, risk_level, reinforcement_needed)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -158,7 +158,7 @@ def save_emergency_alert(route_id: int, bus_plate: str, alert_type: str, severit
     with get_cursor(commit=True) as cursor:
         cursor.execute(
             """
-            INSERT INTO emergency_alerts 
+            INSERT INTO alertas_emergencia
             (route_id, bus_plate, alert_type, severity_level, criticality_score, 
              max_response_time_minutes, location_landmark, description)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -175,7 +175,7 @@ def save_emergency_alert(route_id: int, bus_plate: str, alert_type: str, severit
 def get_all_companies_names():
     """Obtiene la lista de todas las empresas prestadoras de transporte registradas."""
     with get_cursor() as cursor:
-        cursor.execute("SELECT DISTINCT company FROM routes WHERE company IS NOT NULL AND company != ''")
+        cursor.execute("SELECT DISTINCT company FROM rutas WHERE company IS NOT NULL AND company != ''")
         rows = cursor.fetchall()
         return [r["company"] for r in rows]
 
@@ -183,7 +183,7 @@ def get_company_stats(company: str):
     """Recopila estadísticas cruzadas para auditoría de una empresa de Popayán."""
     with get_cursor() as cursor:
         # Rutas de la empresa
-        cursor.execute("SELECT COUNT(*) AS total_routes FROM routes WHERE company = %s", (company,))
+        cursor.execute("SELECT COUNT(*) AS total_routes FROM rutas WHERE company = %s", (company,))
         total_routes = int(cursor.fetchone()["total_routes"])
 
         # Despachos totales y en ruta
@@ -191,8 +191,8 @@ def get_company_stats(company: str):
             SELECT COUNT(*) AS total_dispatches,
                    SUM(CASE WHEN d.status = 'EN_RUTA' THEN 1 ELSE 0 END) AS active_dispatches,
                    SUM(CASE WHEN d.status = 'FINALIZADO' THEN 1 ELSE 0 END) AS completed_dispatches
-            FROM dispatches d
-            JOIN routes r ON d.route_id = r.id
+            FROM despachos d
+            JOIN rutas r ON d.route_id = r.id
             WHERE r.company = %s
         """, (company,))
         dispatch_stats = cursor.fetchone() or {}
@@ -202,8 +202,8 @@ def get_company_stats(company: str):
             SELECT COUNT(*) AS total_incidents,
                    SUM(CASE WHEN i.incident_type = 'ACCIDENTE' THEN 1 ELSE 0 END) AS accidents,
                    SUM(CASE WHEN i.incident_type = 'CONGESTION' THEN 1 ELSE 0 END) AS congestions
-            FROM incidents i
-            JOIN routes r ON i.route_id = r.id
+            FROM incidentes i
+            JOIN rutas r ON i.route_id = r.id
             WHERE r.company = %s
         """, (company,))
         incident_stats = cursor.fetchone() or {}
@@ -214,7 +214,7 @@ def get_company_stats(company: str):
                    AVG(final_score) AS avg_score,
                    AVG(punctuality_score) AS avg_punctuality,
                    AVG(safety_score) AS avg_safety
-            FROM service_ratings
+            FROM calificaciones_servicio
             WHERE company = %s
         """, (company,))
         rating_stats = cursor.fetchone() or {}
@@ -223,8 +223,8 @@ def get_company_stats(company: str):
         cursor.execute("""
             SELECT COUNT(*) AS total_alerts,
                    SUM(CASE WHEN ea.severity_level IN ('ALTA', 'CRITICA') THEN 1 ELSE 0 END) AS high_alerts
-            FROM emergency_alerts ea
-            JOIN routes r ON ea.route_id = r.id
+            FROM alertas_emergencia ea
+            JOIN rutas r ON ea.route_id = r.id
             WHERE r.company = %s
         """, (company,))
         alert_stats = cursor.fetchone() or {}
@@ -258,7 +258,7 @@ def find_emergency_alert_by_id(alert_id: int):
             """
             SELECT id, route_id, bus_plate, alert_type, severity_level, criticality_score,
                    max_response_time_minutes, location_landmark, description, status, created_at
-            FROM emergency_alerts
+            FROM alertas_emergencia
             WHERE id = %s
             """,
             (alert_id,)
@@ -273,7 +273,7 @@ def get_all_emergency_alerts():
             """
             SELECT id, route_id, bus_plate, alert_type, severity_level, criticality_score,
                    max_response_time_minutes, location_landmark, description, status, created_at
-            FROM emergency_alerts
+            FROM alertas_emergencia
             ORDER BY id DESC
             """
         )
@@ -302,7 +302,7 @@ def update_emergency_alert(alert_id: int, status: str = None, description: str =
         return False
 
     params.append(alert_id)
-    query = f"UPDATE emergency_alerts SET {', '.join(fields)} WHERE id = %s"
+    query = f"UPDATE alertas_emergencia SET {', '.join(fields)} WHERE id = %s"
     with get_cursor(commit=True) as cursor:
         cursor.execute(query, tuple(params))
         return cursor.rowcount > 0
@@ -311,6 +311,5 @@ def update_emergency_alert(alert_id: int, status: str = None, description: str =
 def delete_emergency_alert(alert_id: int) -> bool:
     """Elimina permanentemente una alerta de emergencia por su ID."""
     with get_cursor(commit=True) as cursor:
-        cursor.execute("DELETE FROM emergency_alerts WHERE id = %s", (alert_id,))
+        cursor.execute("DELETE FROM alertas_emergencia WHERE id = %s", (alert_id,))
         return cursor.rowcount > 0
-
