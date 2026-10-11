@@ -28,8 +28,6 @@
 #   - En Git Bash:
 #       source venv/Scripts/activate
 #
-#   (Sabrás que está activo cuando veas '(venv)' al inicio de la línea de comandos).
-#
 # ------------------------------------------------------------------------------
 # PASO 3: INSTALAR ESTAS DEPENDENCIAS
 # ------------------------------------------------------------------------------
@@ -45,8 +43,7 @@
 #
 #   base_de_datos/esquema_bd.sql
 #
-# Esto creará la base de datos 'movi_popayan_db' con sus tablas y datos iniciales.
-#
+# Esto creará la base de datos 'enrutate_db' con sus tablas y datos iniciales.
 # ------------------------------------------------------------------------------
 # PASO 5: EJECUTAR LOS SERVIDORES
 # ------------------------------------------------------------------------------
@@ -54,41 +51,35 @@
 #
 #   ejecutar_servidores/iniciar_servidores.bat
 #
-# O ejecutarlos individualmente por terminal:
+# O ejecutarlos individualmente por terminal:( recomendado)
 #
-#   python microservicios/servicio_rutas/servidor_rutas.py
-#   python microservicios/servicio_operaciones/servidor_operaciones.py
+#  cd "c:\Users\Usuario\Downloads\proyecto rutas\microservicios\servicio_rutas"
+#  python server.py
+
 #
+#cd "c:\Users\Usuario\Downloads\proyecto rutas\microservicios\servicio_operaciones"
+#python server.py
+
 # WSDL Disponibles:
 #   - Rutas (Puerto 8001):       http://127.0.0.1:8001/?wsdl
 #   - Operaciones (Puerto 8002): http://127.0.0.1:8002/?wsdl
+#   - Monitoreo REST (Puerto 5003): http://127.0.0.1:5003/
 #
 # ------------------------------------------------------------------------------
 # PARA DESACTIVAR EL ENTORNO VIRTUAL AL TERMINAR:
 # ------------------------------------------------------------------------------
 #   deactivate
-#
 # ==============================================================================
 # LISTA DE DEPENDENCIAS DE PYTHON:
 # ==============================================================================
-
-# Framework para microservicios web basados en SOAP / RPC
 spyne==2.14.0
-
-# Conector MySQL nativo y ligero para Python
 PyMySQL==1.1.2
-
-# Librería criptográfica para autenticación segura en MySQL
 cryptography>=42.0.0
-
-# Procesador XML de alto rendimiento requerido por Spyne
 lxml==6.0.2
-
-# Cliente HTTP para realizar peticiones y pruebas
 requests==2.32.5
-
-# Cliente SOAP avanzado para Python
 zeep==4.3.2
-
-# Carga de variables de entorno desde archivo .env
 python-dotenv==1.0.1
+Flask>=3.0.0
+PyJWT>=2.8.0
+Flask-Cors>=4.0.0
+Flask-Limiter>=3.5.0

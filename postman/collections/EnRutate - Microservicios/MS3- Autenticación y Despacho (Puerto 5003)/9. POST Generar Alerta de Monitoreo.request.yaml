@@ -1,0 +1,20 @@
+$kind: http-request
+url: http://127.0.0.1:5003/monitoreo/alertas
+method: POST
+headers:
+  Content-Type: application/json
+  x-api-key: popayan-admin-key-2026
+body:
+  type: text
+  content: |-
+    {
+      "route_id": 1,
+      "bus_plate": "TPK-102",
+      "alert_type": "BOTON_PANICO",
+      "severity_level": "ALTA",
+      "criticality_score": 88.5,
+      "max_response_time_minutes": 8,
+      "location_landmark": "Barrio Bolívar",
+      "description": "Conductor activa botón de pánico por riña en paradero."
+    }
+order: 9000

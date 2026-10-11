@@ -19,7 +19,7 @@ def find_all_active() -> list[Route]:
     with get_cursor() as cursor:
         sql = """
             SELECT id, code, company, origin, destination, fare, schedule, status
-            FROM routes
+            FROM rutas
             ORDER BY id ASC
         """
         cursor.execute(sql)
@@ -30,7 +30,7 @@ def find_by_id(route_id: int) -> Route | None:
     with get_cursor() as cursor:
         sql = """
             SELECT id, code, company, origin, destination, fare, schedule, status
-            FROM routes
+            FROM rutas
             WHERE id = %s
             LIMIT 1
         """
@@ -45,8 +45,8 @@ def search_by_zone(zone_keyword: str) -> list[Route]:
         sql = """
             SELECT DISTINCT r.id, r.code, r.company, r.origin, r.destination, 
                             r.fare, r.schedule, r.status
-            FROM routes r
-            LEFT JOIN stops s ON r.id = s.route_id
+            FROM rutas r
+            LEFT JOIN paradas s ON r.id = s.route_id
             WHERE r.origin LIKE %s 
                OR r.destination LIKE %s 
                OR s.name LIKE %s 
@@ -60,7 +60,7 @@ def insert_route(code: str, company: str, origin: str, destination: str, fare: f
     """Inserta una nueva ruta en la base de datos."""
     with get_cursor(commit=True) as cursor:
         sql = """
-            INSERT INTO routes (code, company, origin, destination, fare, schedule, status)
+            INSERT INTO rutas (code, company, origin, destination, fare, schedule, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(sql, (
@@ -78,7 +78,7 @@ def update_route(route_id: int, code: str, company: str, origin: str, destinatio
     """Actualiza una ruta existente."""
     with get_cursor(commit=True) as cursor:
         sql = """
-            UPDATE routes
+            UPDATE rutas
             SET code = %s, company = %s, origin = %s, destination = %s, fare = %s, schedule = %s, status = %s
             WHERE id = %s
         """
@@ -97,7 +97,7 @@ def update_route(route_id: int, code: str, company: str, origin: str, destinatio
 def delete_route(route_id: int) -> bool:
     """Elimina una ruta por su ID."""
     with get_cursor(commit=True) as cursor:
-        sql = "DELETE FROM routes WHERE id = %s"
+        sql = "DELETE FROM rutas WHERE id = %s"
         cursor.execute(sql, (route_id,))
         return cursor.rowcount > 0
 
@@ -119,9 +119,9 @@ def find_direct_trip(orig: str, dest: str) -> dict | None:
                 s2.name AS destination_stop_name,
                 s2.stop_order AS destination_order,
                 (s2.stop_order - s1.stop_order) AS stops_between
-            FROM routes r
-            INNER JOIN stops s1 ON r.id = s1.route_id
-            INNER JOIN stops s2 ON r.id = s2.route_id
+            FROM rutas r
+            INNER JOIN paradas s1 ON r.id = s1.route_id
+            INNER JOIN paradas s2 ON r.id = s2.route_id
             WHERE (s1.name LIKE %s OR s1.landmark_reference LIKE %s)
               AND (s2.name LIKE %s OR s2.landmark_reference LIKE %s)
               AND s1.stop_order < s2.stop_order
@@ -146,7 +146,7 @@ def find_direct_trip(orig: str, dest: str) -> dict | None:
                 r.destination AS destination_stop_name,
                 6 AS destination_order,
                 5 AS stops_between
-            FROM routes r
+            FROM rutas r
             WHERE r.origin LIKE %s
               AND r.destination LIKE %s
               AND (r.status = 'ACTIVA' OR r.status IS NULL)
@@ -169,12 +169,12 @@ def find_transfer_trip(orig: str, dest: str) -> dict | None:
                 r2.id AS r2_id, r2.code AS r2_code, r2.company AS r2_company, r2.fare AS r2_fare,
                 s_dest.name AS alighting_stop,
                 ((s_trans1.stop_order - s_orig.stop_order) + (s_dest.stop_order - s_trans2.stop_order)) AS total_stops
-            FROM routes r1
-            INNER JOIN stops s_orig ON r1.id = s_orig.route_id
-            INNER JOIN stops s_trans1 ON r1.id = s_trans1.route_id
-            INNER JOIN routes r2 ON r1.id <> r2.id
-            INNER JOIN stops s_trans2 ON r2.id = s_trans2.route_id
-            INNER JOIN stops s_dest ON r2.id = s_dest.route_id
+            FROM rutas r1
+            INNER JOIN paradas s_orig ON r1.id = s_orig.route_id
+            INNER JOIN paradas s_trans1 ON r1.id = s_trans1.route_id
+            INNER JOIN rutas r2 ON r1.id <> r2.id
+            INNER JOIN paradas s_trans2 ON r2.id = s_trans2.route_id
+            INNER JOIN paradas s_dest ON r2.id = s_dest.route_id
             WHERE (s_orig.name LIKE %s OR s_orig.landmark_reference LIKE %s)
               AND (s_dest.name LIKE %s OR s_dest.landmark_reference LIKE %s)
               AND s_trans1.stop_order > s_orig.stop_order
@@ -193,7 +193,7 @@ def get_active_incidents(route_id: int) -> list[dict]:
     with get_cursor() as cursor:
         sql = """
             SELECT id, incident_type, description, reported_by, reported_at, status
-            FROM incidents
+            FROM incidentes
             WHERE route_id = %s AND (status = 'ACTIVO' OR status IS NULL)
             ORDER BY id DESC
         """
@@ -203,7 +203,7 @@ def get_active_incidents(route_id: int) -> list[dict]:
 def get_route_stops_count(route_id: int) -> int:
     """Cuenta la cantidad de paraderos registrados para una ruta."""
     with get_cursor() as cursor:
-        sql = "SELECT COUNT(*) AS total FROM stops WHERE route_id = %s"
+        sql = "SELECT COUNT(*) AS total FROM paradas WHERE route_id = %s"
         cursor.execute(sql, (route_id,))
         res = cursor.fetchone()
         return int(res["total"]) if res and res.get("total") else 0
