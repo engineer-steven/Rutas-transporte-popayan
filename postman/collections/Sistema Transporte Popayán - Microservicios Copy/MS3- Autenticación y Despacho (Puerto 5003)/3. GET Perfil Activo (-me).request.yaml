@@ -1,0 +1,7 @@
+$kind: http-request
+name: 3. GET Perfil Activo (/me)
+url: http://127.0.0.1:5003/me
+method: GET
+headers:
+  x-api-key: popayan-admin-key-2026
+order: 3000

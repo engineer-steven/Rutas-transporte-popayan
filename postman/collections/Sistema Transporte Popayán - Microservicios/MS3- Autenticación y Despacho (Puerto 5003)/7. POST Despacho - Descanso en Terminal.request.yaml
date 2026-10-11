@@ -1,0 +1,16 @@
+$kind: http-request
+url: http://127.0.0.1:5003/despacho/descanso-terminal
+method: POST
+headers:
+  Content-Type: application/json
+  x-api-key: popayan-admin-key-2026
+body:
+  type: text
+  content: |-
+    {
+      "route_id": 1,
+      "bus_plate": "TPK-102",
+      "duracion_trayecto_min": 65,
+      "hora_llegada_terminal": "14:30"
+    }
+order: 7000

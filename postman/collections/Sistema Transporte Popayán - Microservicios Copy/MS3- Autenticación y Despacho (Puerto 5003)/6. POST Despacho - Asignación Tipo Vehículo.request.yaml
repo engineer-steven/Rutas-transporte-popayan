@@ -1,0 +1,16 @@
+$kind: http-request
+url: http://127.0.0.1:5003/despacho/tipo-vehiculo
+method: POST
+headers:
+  Content-Type: application/json
+  x-api-key: popayan-admin-key-2026
+body:
+  type: text
+  content: |-
+    {
+      "route_id": 1,
+      "hora": 8,
+      "pasajeros_estimados": 24,
+      "longitud_ruta_km": 15.0
+    }
+order: 6000

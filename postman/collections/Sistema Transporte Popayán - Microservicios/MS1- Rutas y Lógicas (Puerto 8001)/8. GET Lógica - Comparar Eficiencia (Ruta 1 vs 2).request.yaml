@@ -1,0 +1,9 @@
+$kind: http-request
+url: http://127.0.0.1:8001/logicas/comparar?ruta1=1&ruta2=2
+method: GET
+headers:
+  x-api-key: "123"
+queryParams:
+  ruta1: "1"
+  ruta2: "2"
+order: 8000

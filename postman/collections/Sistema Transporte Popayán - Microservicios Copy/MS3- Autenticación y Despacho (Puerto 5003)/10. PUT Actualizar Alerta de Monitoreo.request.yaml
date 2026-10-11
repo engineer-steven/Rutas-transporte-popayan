@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://127.0.0.1:5003/monitoreo/alertas/1
+method: PUT
+headers:
+  Content-Type: application/json
+  x-api-key: popayan-admin-key-2026
+body:
+  type: text
+  content: |-
+    {
+      "status": "RESUELTA",
+      "description": "Novedad vial atendida por cuadrilla de Tránsito en Popayán.",
+      "severity_level": "BAJA"
+    }
+order: 10000
