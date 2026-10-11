@@ -1,149 +1,157 @@
-# MoviPopayán - Sistema de Microservicios de Transporte Público (SOAP)
+# MoviPopayán - Sistema de Microservicios de Transporte Público
 
-Plataforma basada en **microservicios web SOAP** (utilizando Python y Spyne) para la gestión, consulta y control operativo de rutas de transporte público en Popayán.
+Plataforma basada en **Microservicios Web SOAP y REST** (Python + Spyne + Flask + MySQL) para la gestión de rutas de transporte urbano, analítica avanzada de viajes, control de despachos, telemetría de aforo y alertas en la ciudad de Popayán.
 
 ---
 
-## 🏛️ Estructura Limpia del Proyecto
+## 🏛️ Arquitectura Modular del Proyecto
 
-El proyecto está organizado de manera sencilla y modular:
+El sistema adopta una arquitectura desacoplada por capas, donde cada microservicio es autónomo e independiente:
 
 ```text
 proyecto rutas/
-├── .gitignore
-├── README.md                                          # Guía general del proyecto y requisitos a desarrollar
-├── requirements.txt                                   # Librerías necesarias de Python (Spyne, PyMySQL, etc.)
+├── README.md                                # Documentación completa del proyecto
+├── GUIA_PRUEBAS_SOAP_Y_FUNCIONES.md         # Guía de pruebas para microservicios SOAP
+├── GUIA_PRUEBAS_REST_MICROSERVICIO_3.md     # Guía completa del Microservicio 3 REST (JWT + 5 Endpoints)
+├── requirements.txt                         # Dependencias Python (Spyne, Flask, PyJWT, PyMySQL, etc.)
+├── MoviPopayan_Microservicios_Entrega.zip   # Archivo comprimido listo para la entrega oficial
 │
-├── base_de_datos/                                     # Módulo de Base de Datos MySQL
-│   ├── conexion_bd.py                                 # Configuración y función de conexión a la base de datos
-│   └── esquema_bd.sql                                 # Script SQL con creación de tablas y datos iniciales
+├── base_de_datos/                           # Esquema de persistencia
+│   └── esquema_bd.sql                       # Tablas y datos de prueba completos con inserts
 │
-├── microservicios/                                    # Código de los Microservicios SOAP
-│   ├── servicio_rutas/                                # Microservicio 1: Consulta y Gestión de Rutas
-│   │   ├── __init__.py
-│   │   └── servidor_rutas.py                          # Servidor SOAP de Rutas (Puerto 8001)
+├── microservicios/
+│   ├── servicio_rutas/                      # Microservicio 1 (SOAP - Puerto 8001)
+│   │   ├── config.py, database.py, models.py, repository.py, service.py, server.py
 │   │
-│   └── servicio_operaciones/                          # Microservicio 2: Operaciones y Tiempos
-│       ├── __init__.py
-│       └── servidor_operaciones.py                    # Servidor SOAP de Operaciones (Puerto 8002)
+│   ├── servicio_operaciones/                # Microservicio 2 (SOAP - Puerto 8002)
+│   │   ├── config.py, database.py, models.py, repository.py, service.py, server.py
+│   │
+│   └── servicio_monitoreo/                  # Microservicio 3 (REST - Puerto 5003)
+│       ├── .env                             # Variables de entorno y puerto 5003
+│       ├── config.py                        # Configuración tipada
+│       ├── database.py                      # Conexión MySQL con DictCursor
+│       ├── auth.py                          # Seguridad JWT Bearer / API Key y @token_required
+│       ├── repository.py                    # Acceso a datos de usuarios, calificaciones y telemetría
+│       ├── service.py                       # 5 Lógicas No Lineales de alta relevancia
+│       ├── routes.py                        # Endpoints REST (Flask Blueprints)
+│       └── server.py                        # Servidor REST ejecutable
 │
-├── ejecutar_servidores/                               # Ejecutables para iniciar el sistema
-│   └── iniciar_servidores.bat                         # Lanzador en 1 clic que abre ambos servidores
-│
-└── scripts/                                           # Scripts auxiliares
-    └── instalar_dependencias.bat                      # Instalador automático del entorno virtual y librerías
+└── scripts/
+    ├── instalar_dependencias.bat            # Instala librerías en venv
+    ├── iniciar_servicio_monitoreo.bat       # Levanta el Microservicio 3 (Puerto 5003)
+    ├── iniciar_todos_los_servicios.bat      # Levanta los 3 microservicios a la vez
+    ├── probar_servicio_monitoreo.py         # Test automatizado de Login, JWT y 5 endpoints
+    ├── comprimir_proyecto.bat               # Empaqueta el ZIP de entrega oficial
+    └── comprimir_proyecto.py                # Script de compresión selectiva
 ```
 
 ---
 
-## ⚙️ Guía Rápida: Entorno Virtual y Puesta en Marcha
+## 📦 Explicación de Cada Archivo dentro de los Microservicios
 
-Sigue estos 5 pasos para poner a funcionar el proyecto desde cero:
+Cada microservicio cuenta con 6 archivos con responsabilidades estrictamente separadas:
 
-### 1. Crear el Entorno Virtual
-```bash
-python -m venv venv
-```
+| Archivo             | Capa / Responsabilidad   | ¿Por qué existe y qué hace?                                                                                                                                                                                                                   |
+| ------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`config.py`**     | **Configuración**        | Lee las credenciales de la base de datos (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) y el puerto (`SERVER_PORT`) desde variables de entorno con fallbacks por defecto. Evita quemar contraseñas en el código.                            |
+| **`database.py`**   | **Conexión a BD**        | Abre conexiones a MySQL usando `pymysql` con `DictCursor`. Provee el context manager `get_cursor(commit=False)` para abrir, ejecutar y cerrar la conexión automáticamente, previniendo fugas de conexiones.                                   |
+| **`models.py`**     | **Contrato de Datos**    | Define las clases Spyne (`ComplexModel`) con tipos primitivos (`Integer`, `Unicode`, `Float`, `Boolean`). Permite que Spyne construya el contrato WSDL para que clientes como **SoapUI** reconozcan la estructura de peticiones y respuestas. |
+| **`repository.py`** | **Acceso a Datos (DAO)** | Es el **único** lugar donde se escribe código SQL (`SELECT`, `INSERT`, `UPDATE`, `DELETE`). Mapea los diccionarios devueltos por MySQL a los modelos Spyne correspondientes.                                                                  |
+| **`service.py`**    | **Lógica de Negocio**    | Define la clase `ServiceBase` con todas las operaciones decoradas con `@rpc(...)` y las **lógicas no planas** (algoritmos, cálculos, simulaciones). También instancia la `Application` SOAP 1.1.                                              |
+| **`server.py`**     | **Punto de Entrada**     | Empaqueta la aplicación Spyne en un servidor WSGI estándar (`make_server`) y lo pone a escuchar en el puerto correspondiente. Es el archivo que se ejecuta en terminal para probar en SoapUI.                                                 |
 
-### 2. Activar el Entorno Virtual
-* **En PowerShell:**
-  ```powershell
-  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-  .\venv\Scripts\Activate.ps1
-  ```
-* **En Símbolo del Sistema (CMD):**
-  ```cmd
-  venv\Scripts\activate.bat
-  ```
-* **En Git Bash:**
-  ```bash
-  source venv/Scripts/activate
-  ```
-*(Sabrás que está activo cuando veas `(venv)` al inicio de la terminal).*
+---
 
-### 3. Instalar Dependencias
-```bash
-pip install --upgrade pip
+## 🗄️ Base de Datos: `base_de_datos/esquema_bd.sql`
+
+> **Nota de diseño:** La lógica de conexión reside en el archivo `database.py` de cada microservicio, por lo que la carpeta `base_de_datos/` contiene únicamente el script SQL de creación y datos de prueba.
+
+### Tablas del Sistema:
+
+1. **`routes`**: Información de rutas de buses (código, empresa como _Sotracauca_ o _Transpubenza_, origen, destino, tarifa, horario y estado).
+2. **`stops`**: Paraderos georreferenciados asociados a cada ruta con orden secuencial (`stop_order`).
+3. **`dispatches`**: Despachos de vehículos con placa (`bus_plate`) y fecha/hora de salida (`departure_time`).
+4. **`incidents`**: Novedades y alertas viales activas o resueltas (congestión, accidentes, desvíos).
+
+---
+
+## 🚌 Microservicio 1: Servicio de Rutas (Puerto 8001)
+
+Expone operaciones CRUD básicas y **5 Lógicas No Planas** con algoritmos avanzados:
+
+### Operaciones CRUD y Consulta:
+
+- `get_all_routes()`: Retorna todas las rutas activas.
+- `get_route_by_id(route_id)`: Consulta detallada de una ruta por ID.
+- `search_routes_by_zone(zone_keyword)`: Búsqueda flexible por sector en Popayán (_Campanario_, _Centro_, _Hospital San José_).
+- `add_route(...)`: Registro de nuevas rutas.
+- `update_route(...)`: Modificación de rutas existentes.
+- `delete_route(route_id)`: Eliminación de ruta con borrado en cascada.
+
+### ⭐ Las 5 Lógicas No Planas:
+
+1. **`plan_trip(origin_keyword, destination_keyword)`**:
+   - Valida la secuencia direccional de paraderos (`s1.stop_order < s2.stop_order`).
+   - Calcula cantidad de paradas intermedias, tiempo estimado de viaje (~4 min por parada) y tarifa.
+2. **`suggest_transfer_trip(origin_keyword, destination_keyword)`**:
+   - Algoritmo de planificación multimodal con transbordo entre 2 rutas cuando no existe conexión directa.
+   - Encuentra el nodo o paradero común de cambio (_Centro/Parque Caldas_ o _Terminal_), calcula tarifa combinada y tiempo total con margen de espera.
+3. **`calculate_route_congestion_index(route_id)`**:
+   - Cruza la ruta con la tabla de incidentes activos (`incidents`).
+   - Aplica ponderaciones por tipo de evento (+20 min accidente, +15 min desvío, +10 min congestión) y calcula el índice de confiabilidad (0-100%) y nivel (_NORMAL_, _MODERADO_, _ALTO_, _CRÍTICO_).
+4. **`simulate_traffic_schedule(route_id, departure_hour)`**:
+   - Evalúa la hora de salida respecto a las horas pico de Popayán (_06:30–08:30_, _11:45–13:45_, _17:30–19:30_).
+   - Aplica factor multiplicador de tráfico del `1.45x` y calcula la hora estimada de llegada con consejos preventivos.
+5. **`compare_routes_efficiency(route_id_1, route_id_2)`**:
+   - Compara dos rutas evaluando densidad de paraderos, tarifa y tiempo de ciclo completo.
+   - Emite un dictamen técnico recomendando cuál es superior según rapidez o economía.
+
+---
+
+## ⏱️ Microservicio 2: Servicio de Operaciones (Puerto 8002)
+
+Gestiona la operativa en vía, intervalos entre despachos de buses y novedades de tránsito:
+
+- `calculate_bus_time_difference(route_id, bus_plate_1, bus_plate_2)`: Consulta los despachos de dos vehículos en una ruta y calcula los minutos exactos de intervalo entre salidas.
+- `calculate_time_gap(time_1, time_2)`: Calculadora horaria directa entre dos cadenas de tiempo.
+- `get_stops_by_route(route_id)`: Lista los paraderos de una ruta ordenados por su campo `stop_order`.
+- `report_incident(route_id, incident_type, description, reported_by)`: Registra un incidente vial en la ruta.
+- `get_incidents_by_route(route_id)`: Consulta las novedades viales activas reportadas para una ruta.
+
+---
+
+## 🚀 Puesta en Marcha y Pruebas en SoapUI
+
+### 1. Activar Entorno Virtual e Instalar Dependencias
+
+```powershell
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
-*(O simplemente haz doble clic en `scripts\instalar_dependencias.bat`).*
 
-### 4. Importar la Base de Datos en MySQL
-Ejecuta el archivo [`base_de_datos/esquema_bd.sql`](base_de_datos/esquema_bd.sql) en MySQL Workbench o phpMyAdmin.
+### 2. Importar Base de Datos en MySQL
 
-### 5. Iniciar los Servidores
-Haz doble clic en:
-```text
-ejecutar_servidores/iniciar_servidores.bat
-```
-O arráncalos manualmente por terminal:
-```bash
-python microservicios/servicio_rutas/servidor_rutas.py
-python microservicios/servicio_operaciones/servidor_operaciones.py
-```
-* **WSDL Rutas:** `http://127.0.0.1:8001/?wsdl`
-* **WSDL Operaciones:** `http://127.0.0.1:8002/?wsdl`
+Ejecuta el archivo `base_de_datos/esquema_bd.sql` en phpMyAdmin, MySQL Workbench o consola MySQL.
 
+### 3. Ejecutar los Servidores
 
----
+- **Terminal 1 (Rutas):**
 
-## 📋 Guía de Implementación: Lo Que Hay Que Hacer
+  ```powershell
+  python microservicios\servicio_rutas\server.py
+  ```
 
-Cada archivo contiene su esqueleto estructurado con comentarios `# TODO` y explicaciones paso a paso de lo que debes programar:
+  > WSDL: **`http://127.0.0.1:8001/?wsdl`**
 
-### 1. `base_de_datos/conexion_bd.py`
-- **Librería:** `pymysql`.
-- **Configuración:** Establecer variables de conexión (`host`, `user`, `password`, `db='movi_popayan_db'`, `port=3306`).
-- **Función:** Implementar `get_db_connection()` para abrir y retornar una conexión con cursor de tipo diccionario (`pymysql.cursors.DictCursor`).
+- **Terminal 2 (Operaciones):**
+  ```powershell
+  python microservicios\servicio_operaciones\server.py
+  ```
+  > WSDL: **`http://127.0.0.1:8002/?wsdl`**
 
-### 2. `base_de_datos/esquema_bd.sql`
-- Crear la base de datos `movi_popayan_db`.
-- Definir las 4 tablas principales con sus tipos de datos y llaves primarias:
-  1. `routes`: Rutas de transporte (código, empresa, origen, destino, tarifa, horario, estado).
-  2. `stops`: Paraderos y puntos de referencia de cada ruta con su orden (`stop_order`).
-  3. `dispatches`: Control de despachos de buses (placa, hora de salida, ruta asociada).
-  4. `incidents`: Reporte de eventualidades, trancones o accidentes en ruta.
-- Agregar sentencias `INSERT INTO` con datos reales de Popayán para pruebas.
+### 4. Probar en SoapUI
 
-### 3. `microservicios/servicio_rutas/servidor_rutas.py` (Puerto 8001)
-- Definir los modelos SOAP `Route` y `TripPlanResult`.
-- En la clase `RoutesService(ServiceBase)`, implementar las operaciones:
-  - `get_all_routes(ctx)`: Consultar y listar todas las rutas.
-  - `get_route_by_id(ctx, route_id)`: Buscar una ruta específica por ID.
-  - `search_routes_by_zone(ctx, zone_keyword)`: Filtrar rutas que pasen por un sector clave (ej: Campanario, Centro).
-  - `add_route(ctx, ...)`: Insertar una nueva ruta en la base de datos.
-  - `plan_trip(ctx, origin_keyword, destination_keyword)`: **[Lógica No Plana / Algorítmica]** Planifica el viaje óptimo directo entre dos puntos de Popayán validando el sentido de los paraderos (`stop_order`), calculando paradas intermedias, tiempo estimado y tarifa.
-- Configurar el servidor WSGI en `http://127.0.0.1:8001/?wsdl`.
-
-### 4. `microservicios/servicio_operaciones/servidor_operaciones.py` (Puerto 8002)
-- Definir los modelos SOAP: `Stop`, `Incident` y `BusTimeDifferenceResult`.
-- En la clase `OperationsService(ServiceBase)`, implementar las operaciones:
-  - `calculate_bus_time_difference(ctx, route_id, bus_plate_1, bus_plate_2)`: Consultar la hora de salida de dos buses en la misma ruta y calcular la diferencia en minutos.
-  - `calculate_time_gap(ctx, time_1, time_2)`: Calcular minutos de diferencia entre dos cadenas horarias.
-  - `get_stops_by_route(ctx, route_id)`: Devolver los paraderos ordenados por trayecto.
-  - `report_incident(ctx, ...)`: Registrar una novedad vial.
-  - `get_incidents_by_route(ctx, route_id)`: Listar novedades viales activas.
-- Configurar el servidor WSGI en `http://127.0.0.1:8002/?wsdl`.
-
-### 5. `ejecutar_servidores/iniciar_servidores.bat`
-- Archivo por lotes que abre dos ventanas de consola simultáneas:
-  - Consola 1: Ejecuta `python microservicios\servicio_rutas\servidor_rutas.py`
-  - Consola 2: Ejecuta `python microservicios\servicio_operaciones\servidor_operaciones.py`
-
----
-
-## 🚀 Cómo Sincronizar y Subir a GitHub
-
-Para registrar la nueva estructura limpia y sincronizarla con tu repositorio remoto de GitHub, ejecuta en tu terminal:
-
-```bash
-# 1. Agregar todos los cambios (archivos eliminados, renombrados y nuevos)
-git add -A
-
-# 2. Confirmar los cambios con un mensaje descriptivo
-git commit -m "refactor: estructurar carpetas en base_de_datos, microservicios, ejecutar_servidores y scripts con plantillas limpias"
-
-# 3. Subir al repositorio en GitHub
-git push origin main
-```
-*(Nota: Si tu rama principal se llama `master`, reemplaza `main` por `master`).*
+1. Abre **SoapUI**.
+2. Selecciona **File -> New SOAP Project**.
+3. En **Initial WSDL**, pega la URL del servicio que deseas probar (ej: `http://127.0.0.1:8001/?wsdl`).
+4. SoapUI generará automáticamente todas las peticiones con los esquemas XML listos para enviar y probar.

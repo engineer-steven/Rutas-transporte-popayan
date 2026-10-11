@@ -1,0 +1,10 @@
+$kind: http-request
+url: http://127.0.0.1:8002/operaciones/diferencia-buses?route_id=1&bus1=TPK-102&bus2=TPK-102
+method: GET
+headers:
+  x-api-key: "123"
+queryParams:
+  route_id: "1"
+  bus1: TPK-102
+  bus2: TPK-102
+order: 1000

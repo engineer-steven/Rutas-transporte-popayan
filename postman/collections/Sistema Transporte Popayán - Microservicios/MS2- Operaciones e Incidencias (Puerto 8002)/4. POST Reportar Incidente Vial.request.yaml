@@ -1,0 +1,16 @@
+$kind: http-request
+url: http://127.0.0.1:8002/operaciones/incidente
+method: POST
+headers:
+  Content-Type: application/json
+  x-api-key: "123"
+body:
+  type: text
+  content: |-
+    {
+      "route_id": 1,
+      "incident_type": "CONGESTION",
+      "description": "Tráfico lento en el sector del Centro Histórico",
+      "reported_by": "Operador Central"
+    }
+order: 4000

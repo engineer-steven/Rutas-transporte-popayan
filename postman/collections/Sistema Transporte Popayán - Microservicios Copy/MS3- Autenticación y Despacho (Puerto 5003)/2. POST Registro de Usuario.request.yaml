@@ -1,0 +1,14 @@
+$kind: http-request
+url: http://127.0.0.1:5003/register
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "username": "despachador_norte",
+      "password": "clave123",
+      "role": "OPERADOR"
+    }
+order: 2000

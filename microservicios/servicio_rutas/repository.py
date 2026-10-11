@@ -20,7 +20,6 @@ def find_all_active() -> list[Route]:
         sql = """
             SELECT id, code, company, origin, destination, fare, schedule, status
             FROM routes
-            WHERE status = 'ACTIVA' OR status IS NULL
             ORDER BY id ASC
         """
         cursor.execute(sql)
@@ -57,12 +56,12 @@ def search_by_zone(zone_keyword: str) -> list[Route]:
         cursor.execute(sql, (patron, patron, patron, patron))
         return [_row_to_route(row) for row in cursor.fetchall()]
 
-def insert_route(code: str, company: str, origin: str, destination: str, fare: float, schedule: str) -> bool:
+def insert_route(code: str, company: str, origin: str, destination: str, fare: float, schedule: str, status: str = "ACTIVA") -> bool:
     """Inserta una nueva ruta en la base de datos."""
     with get_cursor(commit=True) as cursor:
         sql = """
             INSERT INTO routes (code, company, origin, destination, fare, schedule, status)
-            VALUES (%s, %s, %s, %s, %s, %s, 'ACTIVA')
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(sql, (
             code.strip(),
@@ -70,8 +69,36 @@ def insert_route(code: str, company: str, origin: str, destination: str, fare: f
             origin.strip(),
             destination.strip(),
             float(fare) if fare is not None else 0.0,
-            schedule.strip()
+            schedule.strip(),
+            status.strip()
         ))
+        return cursor.rowcount > 0
+
+def update_route(route_id: int, code: str, company: str, origin: str, destination: str, fare: float, schedule: str, status: str = "ACTIVA") -> bool:
+    """Actualiza una ruta existente."""
+    with get_cursor(commit=True) as cursor:
+        sql = """
+            UPDATE routes
+            SET code = %s, company = %s, origin = %s, destination = %s, fare = %s, schedule = %s, status = %s
+            WHERE id = %s
+        """
+        cursor.execute(sql, (
+            code.strip(),
+            company.strip(),
+            origin.strip(),
+            destination.strip(),
+            float(fare) if fare is not None else 0.0,
+            schedule.strip(),
+            status.strip(),
+            route_id
+        ))
+        return cursor.rowcount > 0
+
+def delete_route(route_id: int) -> bool:
+    """Elimina una ruta por su ID."""
+    with get_cursor(commit=True) as cursor:
+        sql = "DELETE FROM routes WHERE id = %s"
+        cursor.execute(sql, (route_id,))
         return cursor.rowcount > 0
 
 def find_direct_trip(orig: str, dest: str) -> dict | None:
