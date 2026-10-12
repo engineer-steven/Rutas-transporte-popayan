@@ -1,39 +1,35 @@
 import sys
 import os
-from wsgiref.simple_server import make_server
-from spyne.server.wsgi import WsgiApplication
 
-# Asegurar path local para importaciones directas
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
 from config import Config
-from service import application
+from app import app
 
 def main():
-    wsgi_app = WsgiApplication(application)
-    server = make_server(Config.SERVER_HOST, Config.SERVER_PORT, wsgi_app)
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
 
     print("\n" + "=" * 76)
-    print(" ⏱️  MICROSERVICIO 2: OPERACIONES, INTERVALOS E INCIDENCIAS (SOAP)")
+    print(" MS2: OPERACIONES E INCIDENCIAS - REST/Flask (Puerto 8002)")
     print("=" * 76)
-    print(f" Servidor escuchando en: http://{Config.SERVER_HOST}:{Config.SERVER_PORT}/")
-    print(f" WSDL disponible en:     http://{Config.SERVER_HOST}:{Config.SERVER_PORT}/?wsdl")
-    print(" Espacio de nombres:     popayan.transporte.operaciones")
-    print(" Operaciones Disponibles:")
-    print("   1. calculate_bus_time_difference(route_id, bus_plate_1, bus_plate_2)")
-    print("   2. calculate_time_gap(time_1, time_2)")
-    print("   3. get_stops_by_route(route_id)")
-    print("   4. report_incident(route_id, incident_type, description, reported_by)")
-    print("   5. get_incidents_by_route(route_id)")
-    print("=" * 76)
-    print(" Presione CTRL + C para detener el servidor.\n")
+    print(f" URL base:   http://{Config.SERVER_HOST}:{Config.SERVER_PORT}/")
+    print(" Seguridad:  X-API-KEY: 123  o  Authorization: Bearer <token>")
+    print(" Login:      POST http://127.0.0.1:5003/api/v1/auth/login")
+    print(" Endpoints:")
+    print("   GET  /operaciones/diferencia-buses  ?route_id=&bus1=&bus2=")
+    print("   GET  /operaciones/diferencia-horas  ?hora1=HH:MM&hora2=HH:MM")
+    print("   GET  /operaciones/paraderos/<id>")
+    print("   POST /operaciones/incidente")
+    print("   GET  /operaciones/incidentes/<id>")
+    print("=" * 76 + "\n")
 
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n[!] Servidor de operaciones detenido por el usuario.")
+    app.run(host=Config.SERVER_HOST, port=Config.SERVER_PORT, debug=False)
 
 if __name__ == "__main__":
     main()

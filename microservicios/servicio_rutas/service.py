@@ -1,17 +1,12 @@
-import logging
-from datetime import datetime, timedelta
-from spyne import (
-    Application,
-    rpc,
-    ServiceBase,
-    Integer,
-    Unicode,
-    Float,
-    Boolean,
-    Iterable
-)
-from spyne.protocol.soap import Soap11
+"""
+service.py - Re-exporta app para compatibilidad retroactiva.
+La aplicacion Flask ahora se ensambla con Blueprints en app.py y rutas/.
+"""
+from app import app
 
+<<<<<<< HEAD
+__all__ = ["app"]
+=======
 import repository
 from models import (
     Route,
@@ -446,3 +441,4 @@ application = Application(
     in_protocol=Soap11(validator="lxml"),
     out_protocol=Soap11()
 )
+>>>>>>> 823532235b4f7d7c6b84d50d9fa70b9678f3d37a

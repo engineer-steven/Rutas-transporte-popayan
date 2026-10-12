@@ -1,0 +1,9 @@
+$kind: http-request
+url: http://127.0.0.1:8002/operaciones/diferencia-horas?hora1=06:30&hora2=07:15
+method: GET
+headers:
+  x-api-key: "123"
+queryParams:
+  hora1: 06:30
+  hora2: 07:15
+order: 2000

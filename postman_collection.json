@@ -1,0 +1,619 @@
+{
+  "info": {
+    "_postman_id": "popayan-transporte-microservicios-2026",
+    "name": "EnRutate - Microservicios",
+    "description": "Colección completa con todos los endpoints de los 3 microservicios listos para ejecutar con un solo clic.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "MS3: Autenticación y Despacho (Puerto 5003)",
+      "item": [
+        {
+          "name": "1. POST Login (Obtener Token JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/login",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "2. POST Registro de Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"despachador_norte\",\n  \"password\": \"clave123\",\n  \"role\": \"OPERADOR\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/register",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "3. GET Perfil Activo (/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:5003/me",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["me"]
+            }
+          }
+        },
+        {
+          "name": "4. POST Despacho - Tabla Horaria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"tipo_dia\": \"HABIL\",\n  \"hora_inicio\": \"05:00\",\n  \"hora_fin\": \"22:00\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/despacho/horario",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["despacho", "horario"]
+            }
+          }
+        },
+        {
+          "name": "5. POST Despacho - Frecuencias por Demanda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"hora\": 8,\n  \"tipo_dia\": \"HABIL\",\n  \"capacidad_bus\": 45\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/despacho/frecuencias",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["despacho", "frecuencias"]
+            }
+          }
+        },
+        {
+          "name": "6. POST Despacho - Asignación Tipo Vehículo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"hora\": 8,\n  \"pasajeros_estimados\": 24,\n  \"longitud_ruta_km\": 15.0\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/despacho/tipo-vehiculo",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["despacho", "tipo-vehiculo"]
+            }
+          }
+        },
+        {
+          "name": "7. POST Despacho - Descanso en Terminal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"bus_plate\": \"TPK-102\",\n  \"duracion_trayecto_min\": 65,\n  \"hora_llegada_terminal\": \"14:30\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/despacho/descanso-terminal",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["despacho", "descanso-terminal"]
+            }
+          }
+        },
+        {
+          "name": "8. POST Despacho - Rotación Conductor y Fatiga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conductor_id\": 3,\n  \"horas_conducidas_hoy\": 6.5,\n  \"vueltas_completadas\": 4,\n  \"incidentes_reportados\": 1\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/despacho/rotacion-conductor",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["despacho", "rotacion-conductor"]
+            }
+          }
+        },
+        {
+          "name": "9. POST Generar Alerta de Monitoreo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"bus_plate\": \"TPK-102\",\n  \"alert_type\": \"BOTON_PANICO\",\n  \"severity_level\": \"ALTA\",\n  \"criticality_score\": 88.5,\n  \"max_response_time_minutes\": 8,\n  \"location_landmark\": \"Barrio Bolívar\",\n  \"description\": \"Conductor activa botón de pánico por riña en paradero.\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/monitoreo/alertas",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["monitoreo", "alertas"]
+            }
+          }
+        },
+        {
+          "name": "10. PUT Actualizar Alerta de Monitoreo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESUELTA\",\n  \"description\": \"Novedad vial atendida por cuadrilla de Tránsito en Popayán.\",\n  \"severity_level\": \"BAJA\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5003/monitoreo/alertas/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["monitoreo", "alertas", "1"]
+            }
+          }
+        },
+        {
+          "name": "11. DELETE Eliminar Alerta de Monitoreo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "popayan-admin-key-2026"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:5003/monitoreo/alertas/3",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5003",
+              "path": ["monitoreo", "alertas", "3"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MS1: Rutas y Lógicas (Puerto 8001)",
+      "item": [
+        {
+          "name": "1. GET Listar Todas las Rutas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/rutas",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["rutas"]
+            }
+          }
+        },
+        {
+          "name": "2. GET Ruta por ID (Ruta 1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/rutas/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["rutas", "1"]
+            }
+          }
+        },
+        {
+          "name": "3. GET Buscar Rutas por Zona (Variante)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/rutas/buscar?zona=Variante",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["rutas", "buscar"],
+              "query": [
+                {
+                  "key": "zona",
+                  "value": "Variante"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. GET Lógica - Planificar Viaje Directo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/logicas/viaje-directo?origin=La Paz&destination=Los Naranjos",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["logicas", "viaje-directo"],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "La Paz"
+                },
+                {
+                  "key": "destination",
+                  "value": "Los Naranjos"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. GET Lógica - Viaje con Transbordo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/logicas/viaje-transbordo?origin=Cajete&destination=Centro",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "path": ["logicas", "viaje-transbordo"],
+              "port": "8001",
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "Cajete"
+                },
+                {
+                  "key": "destination",
+                  "value": "Centro"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. GET Lógica - Índice de Congestión",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/logicas/congestion/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["logicas", "congestion", "1"]
+            }
+          }
+        },
+        {
+          "name": "7. GET Lógica - Simulador de Tráfico",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/logicas/trafico/1?hora=08:00",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["logicas", "trafico", "1"],
+              "query": [
+                {
+                  "key": "hora",
+                  "value": "08:00"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8. GET Lógica - Comparar Eficiencia (Ruta 1 vs 2)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8001/logicas/comparar?ruta1=1&ruta2=2",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8001",
+              "path": ["logicas", "comparar"],
+              "query": [
+                {
+                  "key": "ruta1",
+                  "value": "1"
+                },
+                {
+                  "key": "ruta2",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MS2: Operaciones e Incidencias (Puerto 8002)",
+      "item": [
+        {
+          "name": "1. GET Diferencia de Tiempo entre Buses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8002/operaciones/diferencia-buses?route_id=1&bus1=TPK-102&bus2=TPK-102",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8002",
+              "path": ["operaciones", "diferencia-buses"],
+              "query": [
+                {
+                  "key": "route_id",
+                  "value": "1"
+                },
+                {
+                  "key": "bus1",
+                  "value": "TPK-102"
+                },
+                {
+                  "key": "bus2",
+                  "value": "TPK-102"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. GET Diferencia entre Horas Directas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8002/operaciones/diferencia-horas?hora1=06:30&hora2=07:15",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8002",
+              "path": ["operaciones", "diferencia-horas"],
+              "query": [
+                {
+                  "key": "hora1",
+                  "value": "06:30"
+                },
+                {
+                  "key": "hora2",
+                  "value": "07:15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. GET Paraderos de una Ruta (Ruta 1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8002/operaciones/paraderos/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8002",
+              "path": ["operaciones", "paraderos", "1"]
+            }
+          }
+        },
+        {
+          "name": "4. POST Reportar Incidente Vial",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"incident_type\": \"CONGESTION\",\n  \"description\": \"Tráfico lento en el sector del Centro Histórico\",\n  \"reported_by\": \"Operador Central\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8002/operaciones/incidente",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8002",
+              "path": ["operaciones", "incidente"]
+            }
+          }
+        },
+        {
+          "name": "5. GET Incidentes Activos de una Ruta",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "123"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8002/operaciones/incidentes/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8002",
+              "path": ["operaciones", "incidentes", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+$kind: http-request
+url: http://127.0.0.1:5003/monitoreo/alertas/3
+method: DELETE
+headers:
+  x-api-key: popayan-admin-key-2026
+order: 11000
