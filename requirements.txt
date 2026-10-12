@@ -44,10 +44,7 @@
 #   base_de_datos/esquema_bd.sql
 #
 # Esto creará la base de datos 'enrutate_db' con sus tablas y datos iniciales.
-<<<<<<< HEAD
-=======
 #
->>>>>>> 823532235b4f7d7c6b84d50d9fa70b9678f3d37a
 # ------------------------------------------------------------------------------
 # PASO 5: EJECUTAR LOS SERVIDORES
 # ------------------------------------------------------------------------------

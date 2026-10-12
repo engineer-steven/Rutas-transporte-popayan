@@ -23,3 +23,5 @@ logs/
 # Variables de entorno y credenciales locales
 .env
 local_settings.py
+
+requirements_utf8.txt
