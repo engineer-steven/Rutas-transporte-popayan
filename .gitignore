@@ -22,4 +22,6 @@ logs/
 
 # Variables de entorno y credenciales locales
 .env
+.env.*
+!.env.example
 local_settings.py

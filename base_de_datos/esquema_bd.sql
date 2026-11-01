@@ -1,11 +1,11 @@
 -- ==============================================================================
 -- ESQUEMA DE BASE DE DATOS: SISTEMA DE TRANSPORTE PÚBLICO (POPAYÁN)
--- Base de Datos: movi_popayan_db
+-- Base de Datos: Enrutate
 -- ==============================================================================
 
 -- 1. Crear base de datos
-CREATE DATABASE IF NOT EXISTS movi_popayan_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE movi_popayan_db;
+CREATE DATABASE IF NOT EXISTS Enrutate CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE Enrutate;
 
 -- 2. TABLA routes (Rutas de transporte público de Popayán)
 CREATE TABLE IF NOT EXISTS routes (
@@ -114,6 +114,229 @@ INSERT INTO stops (route_id, name, landmark_reference, stop_order) VALUES
 (4, 'Centro Comercial Campanario', 'Entrada Panamericana', 2),
 (4, 'Variante Norte', 'Glorieta Chirimía norte', 3);
 
+-- Rutas y paraderos sintéticos para probar búsquedas directas, transbordos y comparativas.
+-- No representan trazados, horarios ni servicios oficiales de transporte.
+UPDATE routes
+SET code = CASE code
+    WHEN 'DEMO-01' THEN 'RUTA-11'
+    WHEN 'DEMO-02' THEN 'RUTA-12'
+    WHEN 'DEMO-03' THEN 'RUTA-13'
+    WHEN 'DEMO-04' THEN 'RUTA-14'
+    WHEN 'DEMO-05' THEN 'RUTA-15'
+    WHEN 'DEMO-06' THEN 'RUTA-16'
+    WHEN 'DEMO-07' THEN 'RUTA-17'
+    WHEN 'DEMO-08' THEN 'RUTA-18'
+    WHEN 'DEMO-09' THEN 'RUTA-19'
+    WHEN 'DEMO-10' THEN 'RUTA-20'
+    WHEN 'DEMO-11' THEN 'RUTA-21'
+    WHEN 'DEMO-12' THEN 'RUTA-22'
+    WHEN 'DEMO-13' THEN 'RUTA-23'
+    WHEN 'DEMO-14' THEN 'RUTA-24'
+    ELSE code
+END
+WHERE code IN (
+    'DEMO-01', 'DEMO-02', 'DEMO-03', 'DEMO-04', 'DEMO-05', 'DEMO-06', 'DEMO-07',
+    'DEMO-08', 'DEMO-09', 'DEMO-10', 'DEMO-11', 'DEMO-12', 'DEMO-13', 'DEMO-14'
+);
+
+INSERT INTO routes (code, company, origin, destination, fare, schedule, status) VALUES
+('RUTA-11', 'Sotracauca', 'La Paz', 'La Florida', 3000.00, '05:30 - 21:00', 'ACTIVA'),
+('RUTA-12', 'Transpubenza', 'La Paz', 'La Cabaña', 3000.00, '05:30 - 21:00', 'ACTIVA'),
+('RUTA-13', 'Translibertad', 'La Paz', 'San Antonio', 3200.00, '06:00 - 20:30', 'ACTIVA'),
+('RUTA-14', 'Transtambo', 'Lomas de Granada', 'La Unión', 3000.00, '05:45 - 21:00', 'ACTIVA'),
+('RUTA-15', 'Sotracauca', 'Cajete', 'Las Tres Margaritas', 3400.00, '05:30 - 20:00', 'ACTIVA'),
+('RUTA-16', 'Transpubenza', 'Terminal de Transportes', 'Villa Occidente', 3000.00, '06:00 - 21:00', 'ACTIVA'),
+('RUTA-17', 'Translibertad', 'Pueblillo', 'Santa Helena', 3200.00, '05:45 - 20:30', 'ACTIVA'),
+('RUTA-18', 'Transtambo', 'Julumito', 'Los Tejares', 3400.00, '05:30 - 19:30', 'ACTIVA'),
+('RUTA-19', 'Sotracauca', 'El Uvo', 'Campo Bello', 3000.00, '05:30 - 21:00', 'ACTIVA'),
+('RUTA-20', 'Transpubenza', 'Santa Teresa', 'La Capitana', 3200.00, '05:45 - 20:30', 'ACTIVA'),
+('RUTA-21', 'Translibertad', 'El Uvo', 'Los Comuneros', 3000.00, '05:30 - 21:00', 'ACTIVA'),
+('RUTA-22', 'Transtambo', 'Cajete', 'Las Tres Margaritas', 3400.00, '05:30 - 20:00', 'ACTIVA'),
+('RUTA-23', 'Sotracauca', 'Piendamó', 'La Cabaña', 3400.00, '05:00 - 19:00', 'ACTIVA'),
+('RUTA-24', 'Transpubenza', 'La Paz', 'La Estancia', 3400.00, '06:00 - 20:00', 'ACTIVA')
+ON DUPLICATE KEY UPDATE
+    company = VALUES(company),
+    origin = VALUES(origin),
+    destination = VALUES(destination),
+    fare = VALUES(fare),
+    schedule = VALUES(schedule),
+    status = VALUES(status);
+
+INSERT INTO stops (route_id, name, landmark_reference, stop_order)
+SELECT r.id, demo.name, demo.landmark_reference, demo.stop_order
+FROM routes r
+JOIN (
+    SELECT 'DEMO-01' AS code, 'La Paz' AS name, 'Paradero de prueba en La Paz' AS landmark_reference, 1 AS stop_order
+    UNION ALL SELECT 'DEMO-01', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 2
+    UNION ALL SELECT 'DEMO-01', 'Centro', 'Paradero de prueba en el Centro', 3
+    UNION ALL SELECT 'DEMO-01', 'Terminal de Transportes', 'Paradero de prueba en la Terminal', 4
+    UNION ALL SELECT 'DEMO-01', 'Hospital Universitario San José', 'Paradero de prueba en el Hospital San José', 5
+    UNION ALL SELECT 'DEMO-02', 'La Paz', 'Paradero de prueba en La Paz', 1
+    UNION ALL SELECT 'DEMO-02', 'La Esmeralda', 'Paradero de prueba en La Esmeralda', 2
+    UNION ALL SELECT 'DEMO-02', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 3
+    UNION ALL SELECT 'DEMO-02', 'Centro', 'Paradero de prueba en el Centro', 4
+    UNION ALL SELECT 'DEMO-02', 'Centro Comercial Campanario', 'Paradero de prueba en Campanario', 5
+    UNION ALL SELECT 'DEMO-03', 'La Paz', 'Paradero de prueba en La Paz', 1
+    UNION ALL SELECT 'DEMO-03', 'Centro', 'Paradero de prueba en el Centro', 2
+    UNION ALL SELECT 'DEMO-03', 'Centro Comercial Campanario', 'Paradero de prueba en Campanario', 3
+    UNION ALL SELECT 'DEMO-04', 'Lomas de Granada', 'Paradero de prueba en Lomas de Granada', 1
+    UNION ALL SELECT 'DEMO-04', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 2
+    UNION ALL SELECT 'DEMO-04', 'Centro', 'Paradero de prueba en el Centro', 3
+    UNION ALL SELECT 'DEMO-04', 'Hospital Universitario San José', 'Paradero de prueba en el Hospital San José', 4
+    UNION ALL SELECT 'DEMO-05', 'Cajete', 'Paradero de prueba en Cajete', 1
+    UNION ALL SELECT 'DEMO-05', 'Lomas de Granada', 'Paradero de prueba en Lomas de Granada', 2
+    UNION ALL SELECT 'DEMO-05', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 3
+    UNION ALL SELECT 'DEMO-05', 'Centro', 'Paradero de prueba en el Centro', 4
+    UNION ALL SELECT 'DEMO-05', 'Terminal de Transportes', 'Paradero de prueba en la Terminal', 5
+    UNION ALL SELECT 'DEMO-06', 'Terminal de Transportes', 'Paradero de prueba en la Terminal', 1
+    UNION ALL SELECT 'DEMO-06', 'Centro', 'Paradero de prueba en el Centro', 2
+    UNION ALL SELECT 'DEMO-06', 'Centro Comercial Campanario', 'Paradero de prueba en Campanario', 3
+    UNION ALL SELECT 'DEMO-06', 'Bello Horizonte', 'Paradero de prueba en Bello Horizonte', 4
+    UNION ALL SELECT 'DEMO-07', 'Pueblillo', 'Paradero de prueba en Pueblillo', 1
+    UNION ALL SELECT 'DEMO-07', 'Centro', 'Paradero de prueba en el Centro', 2
+    UNION ALL SELECT 'DEMO-07', 'Hospital Universitario San José', 'Paradero de prueba en el Hospital San José', 3
+    UNION ALL SELECT 'DEMO-08', 'Julumito', 'Paradero de prueba en Julumito', 1
+    UNION ALL SELECT 'DEMO-08', 'La Esmeralda', 'Paradero de prueba en La Esmeralda', 2
+    UNION ALL SELECT 'DEMO-08', 'Centro', 'Paradero de prueba en el Centro', 3
+    UNION ALL SELECT 'DEMO-08', 'Centro Comercial Campanario', 'Paradero de prueba en Campanario', 4
+    UNION ALL SELECT 'DEMO-09', 'El Uvo', 'Paradero de prueba en El Uvo', 1
+    UNION ALL SELECT 'DEMO-09', 'Centro', 'Paradero de prueba en el Centro', 2
+    UNION ALL SELECT 'DEMO-09', 'Alfonso López', 'Paradero de prueba en Alfonso López', 3
+    UNION ALL SELECT 'DEMO-10', 'Santa Teresa', 'Paradero de prueba en Santa Teresa', 1
+    UNION ALL SELECT 'DEMO-10', 'Centro', 'Paradero de prueba en el Centro', 2
+    UNION ALL SELECT 'DEMO-10', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 3
+    UNION ALL SELECT 'DEMO-10', 'La Paz', 'Paradero de prueba en La Paz', 4
+    UNION ALL SELECT 'DEMO-11', 'El Uvo', 'Paradero de prueba en El Uvo', 1
+    UNION ALL SELECT 'DEMO-11', 'Centro', 'Paradero de prueba en el Centro', 2
+    UNION ALL SELECT 'DEMO-11', 'Terminal de Transportes', 'Paradero de prueba en la Terminal', 3
+    UNION ALL SELECT 'DEMO-12', 'Cajete', 'Paradero de prueba en Cajete', 1
+    UNION ALL SELECT 'DEMO-12', 'Lomas de Granada', 'Paradero de prueba en Lomas de Granada', 2
+    UNION ALL SELECT 'DEMO-12', 'Centro', 'Paradero de prueba en el Centro', 3
+    UNION ALL SELECT 'DEMO-12', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 4
+    UNION ALL SELECT 'DEMO-12', 'Centro Comercial Campanario', 'Paradero de prueba en Campanario', 5
+    UNION ALL SELECT 'DEMO-13', 'Piendamó', 'Paradero de prueba en Piendamó', 1
+    UNION ALL SELECT 'DEMO-13', 'Santa Teresa', 'Paradero de prueba en Santa Teresa', 2
+    UNION ALL SELECT 'DEMO-13', 'Centro', 'Paradero de prueba en el Centro', 3
+    UNION ALL SELECT 'DEMO-13', 'Terminal de Transportes', 'Paradero de prueba en la Terminal', 4
+    UNION ALL SELECT 'DEMO-14', 'La Paz', 'Paradero de prueba en La Paz', 1
+    UNION ALL SELECT 'DEMO-14', 'Los Naranjos', 'Paradero de prueba en Los Naranjos', 2
+    UNION ALL SELECT 'DEMO-14', 'Centro', 'Paradero de prueba en el Centro', 3
+    UNION ALL SELECT 'DEMO-14', 'Hospital Universitario San José', 'Paradero de prueba en el Hospital San José', 4
+) AS demo
+    ON r.code = CONCAT('RUTA-', LPAD(CAST(SUBSTRING(demo.code, 6) AS UNSIGNED) + 10, 2, '0'))
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM stops existing
+    WHERE existing.route_id = r.id
+      AND existing.name = demo.name
+      AND existing.stop_order = demo.stop_order
+);
+
+INSERT INTO stops (route_id, name, landmark_reference, stop_order)
+SELECT r.id, expanded.name, expanded.landmark_reference, expanded.stop_order
+FROM routes r
+JOIN (
+    SELECT 'RUTA-11' AS code, 'Bello Horizonte' AS name, 'Sector de referencia: Bello Horizonte (recorrido simulado)' AS landmark_reference, 6 AS stop_order
+    UNION ALL SELECT 'RUTA-11', 'El Uvo', 'Sector de referencia: El Uvo (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-11', 'Villa del Viento', 'Sector de referencia: Villa del Viento (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-11', 'Prados del Norte', 'Sector de referencia: Prados del Norte (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-11', 'La Florida', 'Sector de referencia: La Florida (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-12', 'Santa Clara', 'Sector de referencia: Santa Clara (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-12', 'La Aldea', 'Sector de referencia: La Aldea (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-12', 'Los Hoyos', 'Sector de referencia: Los Hoyos (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-12', 'Bello Horizonte', 'Sector de referencia: Bello Horizonte (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-12', 'La Cabaña', 'Sector de referencia: La Cabaña (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-13', 'Cadillal', 'Sector de referencia: Cadillal (recorrido simulado)', 4
+    UNION ALL SELECT 'RUTA-13', 'Valencia', 'Sector de referencia: Valencia (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-13', 'El Empedrado', 'Sector de referencia: El Empedrado (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-13', 'Bolívar', 'Sector de referencia: Bolívar (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-13', 'La Pamba', 'Sector de referencia: La Pamba (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-13', 'Bloques de Pubenza', 'Sector de referencia: Bloques de Pubenza (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-13', 'San Antonio', 'Sector de referencia: San Antonio (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-14', 'Pandiguando', 'Sector de referencia: Pandiguando (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-14', 'Retiro Bajo', 'Sector de referencia: Retiro Bajo (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-14', 'San José', 'Sector de referencia: San José (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-14', 'La Sombrilla', 'Sector de referencia: La Sombrilla (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-14', 'Las Ferias', 'Sector de referencia: Las Ferias (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-14', 'La Unión', 'Sector de referencia: La Unión (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-15', 'Puelenje', 'Sector de referencia: Puelenje (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-15', 'Calicanto', 'Sector de referencia: Calicanto (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-15', 'El Pajonal', 'Sector de referencia: El Pajonal (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-15', 'Alfonso López', 'Sector de referencia: Alfonso López (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-15', 'San Bernardino', 'Sector de referencia: San Bernardino (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-15', 'Las Tres Margaritas', 'Sector de referencia: Las Tres Margaritas (recorrido simulado)', 11
+    UNION ALL SELECT 'RUTA-16', 'San Camilo', 'Sector de referencia: San Camilo (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-16', 'San Rafael', 'Sector de referencia: San Rafael (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-16', 'La Estancia', 'Sector de referencia: La Estancia (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-16', 'La Ladera', 'Sector de referencia: La Ladera (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-16', 'El Mirador', 'Sector de referencia: El Mirador (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-16', 'Villa Occidente', 'Sector de referencia: Villa Occidente (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-17', 'Yanaconas', 'Sector de referencia: Yanaconas (recorrido simulado)', 4
+    UNION ALL SELECT 'RUTA-17', 'Pomona', 'Sector de referencia: Pomona (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-17', 'Ciudad Jardín', 'Sector de referencia: Ciudad Jardín (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-17', 'El Recuerdo', 'Sector de referencia: El Recuerdo (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-17', 'Santa Inés', 'Sector de referencia: Santa Inés (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-17', 'El Pinar', 'Sector de referencia: El Pinar (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-17', 'Santa Helena', 'Sector de referencia: Santa Helena (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-18', 'La María Occidente', 'Sector de referencia: La María Occidente (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-18', 'Los Campos', 'Sector de referencia: Los Campos (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-18', 'Las Américas', 'Sector de referencia: Las Américas (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-18', 'La Floresta', 'Sector de referencia: La Floresta (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-18', '31 de Marzo', 'Sector de referencia: 31 de Marzo (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-18', 'Los Tejares', 'Sector de referencia: Los Tejares (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-19', 'Morinda', 'Sector de referencia: Morinda (recorrido simulado)', 4
+    UNION ALL SELECT 'RUTA-19', 'Bellavista', 'Sector de referencia: Bellavista (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-19', 'La Paz', 'Sector de referencia: La Paz (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-19', 'Santa Bárbara', 'Sector de referencia: Santa Bárbara (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-19', 'La Aldea', 'Sector de referencia: La Aldea (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-19', 'La Arboleda', 'Sector de referencia: La Arboleda (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-19', 'Campo Bello', 'Sector de referencia: Campo Bello (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-20', 'Los Sauces', 'Sector de referencia: Los Sauces (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-20', 'Camilo Torres', 'Sector de referencia: Camilo Torres (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-20', 'Las Vegas', 'Sector de referencia: Las Vegas (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-20', 'Villa García', 'Sector de referencia: Villa García (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-20', 'El Retiro', 'Sector de referencia: El Retiro (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-20', 'La Capitana', 'Sector de referencia: La Capitana (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-21', 'La Aldea', 'Sector de referencia: La Aldea (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-21', 'Los Hoyos', 'Sector de referencia: Los Hoyos (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-21', 'San Fernando', 'Sector de referencia: San Fernando (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-21', 'Villa del Carmen', 'Sector de referencia: Villa del Carmen (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-21', 'Bello Horizonte', 'Sector de referencia: Bello Horizonte (recorrido simulado)', 4
+    UNION ALL SELECT 'RUTA-21', 'Alto Cauca', 'Sector de referencia: Alto Cauca (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-21', 'Los Comuneros', 'Sector de referencia: Los Comuneros (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-22', 'Las Guacas', 'Sector de referencia: Las Guacas (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-22', 'Puelenje', 'Sector de referencia: Puelenje (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-22', 'María Oriente', 'Sector de referencia: María Oriente (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-22', 'Avelino Ull', 'Sector de referencia: Avelino Ull (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-22', 'Vereda Pisojé', 'Sector de referencia: Vereda Pisojé (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-22', 'Las Tres Margaritas', 'Sector de referencia: Las Tres Margaritas (recorrido simulado)', 11
+    UNION ALL SELECT 'RUTA-23', 'La Rejoya', 'Sector de referencia: La Rejoya (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-23', 'El Tablazo', 'Sector de referencia: El Tablazo (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-23', 'El Placer', 'Sector de referencia: El Placer (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-23', 'Quintana', 'Sector de referencia: Quintana (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-23', 'Santa Bárbara', 'Sector de referencia: Santa Bárbara (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-23', 'La Cabaña', 'Sector de referencia: La Cabaña (recorrido simulado)', 10
+    UNION ALL SELECT 'RUTA-24', 'Santa Inés', 'Sector de referencia: Santa Inés (recorrido simulado)', 5
+    UNION ALL SELECT 'RUTA-24', 'La Floresta', 'Sector de referencia: La Floresta (recorrido simulado)', 6
+    UNION ALL SELECT 'RUTA-24', 'Los Comuneros', 'Sector de referencia: Los Comuneros (recorrido simulado)', 7
+    UNION ALL SELECT 'RUTA-24', 'El Dean', 'Sector de referencia: El Dean (recorrido simulado)', 8
+    UNION ALL SELECT 'RUTA-24', 'Villa del Norte', 'Sector de referencia: Villa del Norte (recorrido simulado)', 9
+    UNION ALL SELECT 'RUTA-24', 'La Estancia', 'Sector de referencia: La Estancia (recorrido simulado)', 10
+) AS expanded ON expanded.code = r.code
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM stops existing
+    WHERE existing.route_id = r.id
+      AND existing.name = expanded.name
+      AND existing.stop_order = expanded.stop_order
+);
+
+UPDATE stops s
+JOIN routes r ON r.id = s.route_id
+SET s.landmark_reference = CONCAT('Sector de referencia: ', s.name, ' (recorrido simulado)')
+WHERE r.code BETWEEN 'RUTA-11' AND 'RUTA-24'
+  AND s.landmark_reference LIKE 'Paradero de prueba%';
+
 -- Despachos de prueba (con soporte de fecha y hora completa)
 INSERT INTO dispatches (route_id, bus_plate, departure_time, status) VALUES
 (1, 'TPK-102', '2026-09-02 06:30:00', 'EN_RUTA'),
@@ -140,7 +363,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(150) NOT NULL DEFAULT 'Usuario del Sistema',
-    role VARCHAR(50) NOT NULL DEFAULT 'OPERADOR',
+    role VARCHAR(50) NOT NULL DEFAULT 'USUARIO',
     api_key VARCHAR(100) NULL UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -239,4 +462,3 @@ INSERT INTO emergency_alerts (route_id, bus_plate, alert_type, severity_level, c
 (1, 'TPK-102', 'BOTON_PANICO', 'ALTA', 86.25, 9, 'Barrio Bolívar', 'Alerta silenciosa activada por riña en paradero comercial.', 'ACTIVA'),
 (2, 'TPB-111', 'ACCIDENTE_VIAL', 'CRITICA', 97.50, 7, 'Parque Caldas - Centro', 'Colisión leve con motocicleta en Carrera 7, paso cerrado.', 'ACTIVA'),
 (3, 'SOT-451', 'FALLA_MECANICA', 'MEDIA', 47.50, 28, 'Bello Horizonte', 'Recalentamiento del motor en subida, pasajeros transbordados.', 'RESUELTA');
-

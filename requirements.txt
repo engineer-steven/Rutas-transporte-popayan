@@ -43,27 +43,24 @@
 #
 #   base_de_datos/esquema_bd.sql
 #
-# Esto creará la base de datos 'movi_popayan_db' con sus tablas y datos iniciales.
+# Esto creará la base de datos 'Enrutate' con sus tablas y datos iniciales.
 # ------------------------------------------------------------------------------
 # PASO 5: EJECUTAR LOS SERVIDORES
 # ------------------------------------------------------------------------------
-# Puedes iniciar ambos microservicios con doble clic en:
+# Inicia los tres microservicios con doble clic en:
 #
-#   ejecutar_servidores/iniciar_servidores.bat
+#   scripts/iniciar_backend.bat
 #
-# O ejecutarlos individualmente por terminal:( recomendado)
+# O ejecutar un servicio individual desde la raíz del proyecto:
 #
-#  cd "c:\Users\Usuario\Downloads\proyecto rutas\microservicios\servicio_rutas"
-#  python server.py
-
+#  python backend\servicio_rutas\server.py
+#  python backend\servicio_operaciones\server.py
+#  python backend\servicio_monitoreo\server.py
 #
-#cd "c:\Users\Usuario\Downloads\proyecto rutas\microservicios\servicio_operaciones"
-#python server.py
-
-# WSDL Disponibles:
-#   - Rutas (Puerto 8001):       http://127.0.0.1:8001/?wsdl
-#   - Operaciones (Puerto 8002): http://127.0.0.1:8002/?wsdl
-#   - Monitoreo REST (Puerto 5003): http://127.0.0.1:5003/
+# Endpoints base disponibles:
+#   - Rutas REST (Puerto 5001):       http://127.0.0.1:5001/
+#   - Operaciones REST (Puerto 5002): http://127.0.0.1:5002/
+#   - Monitoreo REST (Puerto 5003):   http://127.0.0.1:5003/
 #
 # ------------------------------------------------------------------------------
 # PARA DESACTIVAR EL ENTORNO VIRTUAL AL TERMINAR:
@@ -72,7 +69,6 @@
 # ==============================================================================
 # LISTA DE DEPENDENCIAS DE PYTHON:
 # ==============================================================================
-spyne==2.14.0
 PyMySQL==1.1.2
 cryptography>=42.0.0
 lxml==6.0.2

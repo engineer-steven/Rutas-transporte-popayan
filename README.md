@@ -1,51 +1,86 @@
-# MoviPopayán - Sistema de Microservicios de Transporte Público
+# EnRutate - Transporte público de Popayán
 
-Plataforma basada en **Microservicios Web SOAP y REST** (Python + Spyne + Flask + MySQL) para la gestión de rutas de transporte urbano, analítica avanzada de viajes, control de despachos, telemetría de aforo y alertas en la ciudad de Popayán.
+Plataforma basada en **Arquitectura Full-Stack desacoplada** (Frontend Vue.js + Vite y microservicios Flask REST + MySQL) para la gestión de rutas de transporte urbano, analítica avanzada de viajes, control de despachos y alertas en la ciudad de Popayán.
+
+---
+
+## 🚀 Arquitectura Full-Stack (Estándar Clase Unicomfacauca)
+
+Siguiendo la presentación técnica **"Del backend al full-stack" (Presentación 10)** y el patrón implementado en **`cafeteria_Vue`**, el proyecto se encuentra estructurado en dos capas independientes que se comunican exclusivamente mediante HTTP:
+
+```text
+proyecto rutas/
+├── backend/
+│   ├── iniciar_microservicios.py
+│   ├── servicio_rutas/
+│   ├── servicio_operaciones/
+│   └── servicio_monitoreo/
+├── frontend/
+├── base_de_datos/
+└── scripts/
+```
+
+---
+
+## ⚡ Puesta en Marcha Rápida
+
+### Configurar la firma de sesiones
+
+Los tres microservicios deben compartir un secreto JWT aleatorio de al menos 32 caracteres. Copia `.env.example` a `.env` en la raíz y reemplaza el valor de `JWT_SECRET_KEY`; puedes generar uno con:
+
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+No reutilices el secreto de ejemplo ni publiques el valor de `.env`. El backend se detiene si falta una clave válida.
+
+Para configurar las URLs locales del frontend, copia `frontend/.env.example` a `frontend/.env`. El archivo `.env` de raíz admite una `API_KEY` opcional para integraciones servidor a servidor; no la pongas en `frontend/.env` ni en una variable `VITE_*`, porque los valores `VITE_*` son visibles en el navegador. La aplicación web se autentica con JWT.
+
+### 1. Iniciar los microservicios (Flask - Puertos 5001, 5002 y 5003)
+Doble clic en `scripts/iniciar_backend.bat` o:
+```powershell
+.\venv\Scripts\python.exe .\backend\iniciar_microservicios.py
+```
+> APIs disponibles en `http://127.0.0.1:5001`, `http://127.0.0.1:5002` y `http://127.0.0.1:5003`.
+
+### 2. Iniciar el Frontend (Vue 3 + Vite - Puerto 5174)
+Doble clic en `scripts/iniciar_frontend.bat` o:
+```bash
+cd frontend
+npm run dev
+```
+> Aplicación web disponible en: `http://localhost:5174`
+
+### 3. Credenciales de Acceso
+* **Usuario:** `admin` | **Contraseña:** `admin123`
+* **Usuario:** `operador_popayan` | **Contraseña:** `operador123`
+
+Estas son credenciales de demostración del esquema SQL; cámbialas antes de desplegar el sistema.
+
+### Roles y registro
+
+El formulario público de registro crea únicamente cuentas `USUARIO`; no permite elegir ni enviar otro rol. Los permisos se verifican también en el backend:
+
+| Rol | Acceso |
+| --- | --- |
+| `ADMIN` | Todas las secciones y acciones administrativas |
+| `SUPERVISOR` | Rutas (lectura), operaciones, alertas (lectura), despacho y planificador |
+| `OPERADOR` | Rutas (lectura), operaciones, despacho y planificador |
+| `USUARIO` | Consulta de rutas y planificador |
+
+Para crear un administrador, registra primero una cuenta normal y luego un administrador de la base de datos debe promoverla directamente en MySQL:
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE username = 'nombre_de_usuario';
+```
+
+La aplicación no ofrece autoasignación ni registro público de administradores. Las claves de API guardadas en la base de datos no sustituyen el token JWT para acceder a la aplicación.
 
 ---
 
 ## 🏛️ Arquitectura Modular del Proyecto
 
-El sistema adopta una arquitectura desacoplada por capas, donde cada microservicio es autónomo e independiente:
-
-```text
-proyecto rutas/
-├── README.md                                # Documentación completa del proyecto
-├── GUIA_PRUEBAS_SOAP_Y_FUNCIONES.md         # Guía de pruebas para microservicios SOAP
-├── GUIA_PRUEBAS_REST_MICROSERVICIO_3.md     # Guía completa del Microservicio 3 REST (JWT + 5 Endpoints)
-├── requirements.txt                         # Dependencias Python (Spyne, Flask, PyJWT, PyMySQL, etc.)
-├── MoviPopayan_Microservicios_Entrega.zip   # Archivo comprimido listo para la entrega oficial
-│
-├── base_de_datos/                           # Esquema de persistencia
-│   └── esquema_bd.sql                       # Tablas y datos de prueba completos con inserts
-│
-├── microservicios/
-│   ├── servicio_rutas/                      # Microservicio 1 (SOAP - Puerto 8001)
-│   │   ├── config.py, database.py, models.py, repository.py, service.py, server.py
-│   │
-│   ├── servicio_operaciones/                # Microservicio 2 (SOAP - Puerto 8002)
-│   │   ├── config.py, database.py, models.py, repository.py, service.py, server.py
-│   │
-│   └── servicio_monitoreo/                  # Microservicio 3 (REST - Puerto 5003)
-│       ├── .env                             # Variables de entorno y puerto 5003
-│       ├── config.py                        # Configuración tipada
-│       ├── database.py                      # Conexión MySQL con DictCursor
-│       ├── auth.py                          # Seguridad JWT Bearer / API Key y @token_required
-│       ├── repository.py                    # Acceso a datos de usuarios, calificaciones y telemetría
-│       ├── service.py                       # 5 Lógicas No Lineales de alta relevancia
-│       ├── routes.py                        # Endpoints REST (Flask Blueprints)
-│       └── server.py                        # Servidor REST ejecutable
-│
-└── scripts/
-    ├── instalar_dependencias.bat            # Instala librerías en venv
-    ├── iniciar_servicio_monitoreo.bat       # Levanta el Microservicio 3 (Puerto 5003)
-    ├── iniciar_todos_los_servicios.bat      # Levanta los 3 microservicios a la vez
-    ├── probar_servicio_monitoreo.py         # Test automatizado de Login, JWT y 5 endpoints
-    ├── comprimir_proyecto.bat               # Empaqueta el ZIP de entrega oficial
-    └── comprimir_proyecto.py                # Script de compresión selectiva
-```
-
----
+Los servicios se mantienen en una única ubicación, `backend/`, organizados por dominio. Cada microservicio contiene su propia aplicación, configuración, persistencia, lógica y rutas. Los scripts de ejecución están en `scripts/` y el esquema compartido en `base_de_datos/`.
 
 ## 📦 Explicación de Cada Archivo dentro de los Microservicios
 
@@ -55,16 +90,20 @@ Cada microservicio cuenta con 6 archivos con responsabilidades estrictamente sep
 | ------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`config.py`**     | **Configuración**        | Lee las credenciales de la base de datos (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) y el puerto (`SERVER_PORT`) desde variables de entorno con fallbacks por defecto. Evita quemar contraseñas en el código.                            |
 | **`database.py`**   | **Conexión a BD**        | Abre conexiones a MySQL usando `pymysql` con `DictCursor`. Provee el context manager `get_cursor(commit=False)` para abrir, ejecutar y cerrar la conexión automáticamente, previniendo fugas de conexiones.                                   |
-| **`models.py`**     | **Contrato de Datos**    | Define las clases Spyne (`ComplexModel`) con tipos primitivos (`Integer`, `Unicode`, `Float`, `Boolean`). Permite que Spyne construya el contrato WSDL para que clientes como **SoapUI** reconozcan la estructura de peticiones y respuestas. |
-| **`repository.py`** | **Acceso a Datos (DAO)** | Es el **único** lugar donde se escribe código SQL (`SELECT`, `INSERT`, `UPDATE`, `DELETE`). Mapea los diccionarios devueltos por MySQL a los modelos Spyne correspondientes.                                                                  |
-| **`service.py`**    | **Lógica de Negocio**    | Define la clase `ServiceBase` con todas las operaciones decoradas con `@rpc(...)` y las **lógicas no planas** (algoritmos, cálculos, simulaciones). También instancia la `Application` SOAP 1.1.                                              |
-| **`server.py`**     | **Punto de Entrada**     | Empaqueta la aplicación Spyne en un servidor WSGI estándar (`make_server`) y lo pone a escuchar en el puerto correspondiente. Es el archivo que se ejecuta en terminal para probar en SoapUI.                                                 |
+| **`models.py`**     | **Modelos de datos**     | Define las estructuras de datos utilizadas por las rutas y operaciones que lo requieren.                                                                 |
+| **`repository.py`** | **Acceso a datos (DAO)** | Encapsula las consultas SQL y la persistencia en MySQL.                                                                                                    |
+| **`service.py`**    | **Lógica de negocio**    | Implementa las reglas, cálculos y algoritmos propios del servicio.                                                                                         |
+| **`server.py`**     | **Punto de entrada**     | Inicia la aplicación Flask del microservicio en el puerto configurado.                                                                                     |
 
 ---
 
 ## 🗄️ Base de Datos: `base_de_datos/esquema_bd.sql`
 
 > **Nota de diseño:** La lógica de conexión reside en el archivo `database.py` de cada microservicio, por lo que la carpeta `base_de_datos/` contiene únicamente el script SQL de creación y datos de prueba.
+
+El esquema incluye 14 recorridos simulados numerados `RUTA-11` a `RUTA-24`, con 85 barrios, sectores y puntos de referencia de Popayán para probar búsquedas, recorridos directos y transbordos. Los nombres de empresas se muestran solo como referencia: no confirman que operen esas rutas. Los trayectos y horarios no son oficiales, y la lista no pretende ser el inventario municipal completo de barrios. Por ejemplo, prueba `La Paz` → `Centro Comercial Campanario` para comparar alternativas, o `Cajete` → `Hospital` para buscar un transbordo.
+
+En las tarjetas de ruta y en un itinerario recomendado, **Ver en Google Maps** abre Google Maps en modo transporte público. Google calcula su propio trayecto; el sistema aún no almacena coordenadas o trazados oficiales para dibujar la línea exacta del bus.
 
 ### Tablas del Sistema:
 
@@ -75,7 +114,7 @@ Cada microservicio cuenta con 6 archivos con responsabilidades estrictamente sep
 
 ---
 
-## 🚌 Microservicio 1: Servicio de Rutas (Puerto 8001)
+## 🚌 Microservicio 1: Servicio de Rutas (Puerto 5001)
 
 Expone operaciones CRUD básicas y **5 Lógicas No Planas** con algoritmos avanzados:
 
@@ -108,7 +147,7 @@ Expone operaciones CRUD básicas y **5 Lógicas No Planas** con algoritmos avanz
 
 ---
 
-## ⏱️ Microservicio 2: Servicio de Operaciones (Puerto 8002)
+## ⏱️ Microservicio 2: Servicio de Operaciones (Puerto 5002)
 
 Gestiona la operativa en vía, intervalos entre despachos de buses y novedades de tránsito:
 
@@ -120,7 +159,7 @@ Gestiona la operativa en vía, intervalos entre despachos de buses y novedades d
 
 ---
 
-## 🚀 Puesta en Marcha y Pruebas en SoapUI
+## 🚀 Puesta en Marcha y Pruebas
 
 ### 1. Activar Entorno Virtual e Instalar Dependencias
 
@@ -135,23 +174,20 @@ Ejecuta el archivo `base_de_datos/esquema_bd.sql` en phpMyAdmin, MySQL Workbench
 
 ### 3. Ejecutar los Servidores
 
-- **Terminal 1 (Rutas):**
+- **Terminal 1 (Rutas, puerto 5001):**
 
   ```powershell
-  python microservicios\servicio_rutas\server.py
+  python backend\servicio_rutas\server.py
   ```
 
-  > WSDL: **`http://127.0.0.1:8001/?wsdl`**
+  > API: **`http://127.0.0.1:5001/`**
 
-- **Terminal 2 (Operaciones):**
+- **Terminal 2 (Operaciones, puerto 5002):**
   ```powershell
-  python microservicios\servicio_operaciones\server.py
+  python backend\servicio_operaciones\server.py
   ```
-  > WSDL: **`http://127.0.0.1:8002/?wsdl`**
+  > API: **`http://127.0.0.1:5002/`**
 
-### 4. Probar en SoapUI
+### 4. Probar las APIs REST
 
-1. Abre **SoapUI**.
-2. Selecciona **File -> New SOAP Project**.
-3. En **Initial WSDL**, pega la URL del servicio que deseas probar (ej: `http://127.0.0.1:8001/?wsdl`).
-4. SoapUI generará automáticamente todas las peticiones con los esquemas XML listos para enviar y probar.
+Usa Postman con los endpoints y métodos HTTP definidos en cada servicio. El Microservicio 3 (Monitoreo) se ejecuta en el puerto 5003.
