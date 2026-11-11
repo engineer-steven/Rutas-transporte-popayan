@@ -7,11 +7,25 @@ import OperacionesView from '@/views/OperacionesView.vue'
 import AlertasView from '@/views/AlertasView.vue'
 import DespachoView from '@/views/DespachoView.vue'
 import PlanificadorView from '@/views/PlanificadorView.vue'
+import InicioView from '@/views/InicioView.vue'
+import BuscarRutasView from '@/views/BuscarRutasView.vue'
+import MapaRutasView from '@/views/MapaRutasView.vue'
+import DetalleRutaView from '@/views/DetalleRutaView.vue'
+import FavoritosView from '@/views/FavoritosView.vue'
+import HistorialView from '@/views/HistorialView.vue'
+import PlanesView from '@/views/PlanesView.vue'
+import PerfilView from '@/views/PerfilView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/rutas' },
+    {
+      path: '/',
+      redirect: () => {
+        const auth = useAuthStore()
+        return auth.estaAutenticado && auth.role === 'USUARIO' ? { name: 'inicio' } : { name: 'rutas' }
+      },
+    },
     {
       path: '/login',
       name: 'login',
@@ -53,6 +67,54 @@ const router = createRouter({
       name: 'planificador',
       component: PlanificadorView,
       meta: { requiereAuth: true, roles: ['ADMIN', 'SUPERVISOR', 'OPERADOR', 'USUARIO'] },
+    },
+    {
+      path: '/inicio',
+      name: 'inicio',
+      component: InicioView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/buscar',
+      name: 'buscar',
+      component: BuscarRutasView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/mapa',
+      name: 'mapa',
+      component: MapaRutasView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/detalle/:id',
+      name: 'detalle',
+      component: DetalleRutaView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/favoritos',
+      name: 'favoritos',
+      component: FavoritosView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/historial',
+      name: 'historial',
+      component: HistorialView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/planes',
+      name: 'planes',
+      component: PlanesView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
+    },
+    {
+      path: '/perfil',
+      name: 'perfil',
+      component: PerfilView,
+      meta: { requiereAuth: true, roles: ['USUARIO'] },
     },
   ],
 })

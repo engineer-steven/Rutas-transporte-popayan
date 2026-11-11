@@ -36,3 +36,7 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## Datos de barrios y rutas
+
+El buscador incluye 74 barrios y sectores de Popayán con coordenadas basadas en OpenStreetMap. Los recorridos que los conectan son datos de demostración y no representan rutas oficiales ni confirman el paso de una empresa de transporte por cada barrio. El mapa conserva la atribución de OpenStreetMap.

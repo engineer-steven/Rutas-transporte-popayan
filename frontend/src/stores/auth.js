@@ -13,18 +13,27 @@ function normalizarRol(rol) {
   return rolesValidos.has(rolFinal) ? rolFinal : 'USUARIO'
 }
 
+function limpiarSesionPersistente() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('username')
+  localStorage.removeItem('role')
+}
+
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    token: localStorage.getItem('token') || null,
-    username: localStorage.getItem('username') || null,
-    role: normalizarRol(localStorage.getItem('role')),
-  }),
+  state: () => {
+    limpiarSesionPersistente()
+    return {
+      token: sessionStorage.getItem('token') || null,
+      username: sessionStorage.getItem('username') || null,
+      role: normalizarRol(sessionStorage.getItem('role')),
+    }
+  },
   getters: {
     estaAutenticado: (state) => !!state.token,
     esAdmin: (state) => state.role === 'ADMIN',
     inicio: (state) => {
       if (state.role === 'OPERADOR' || state.role === 'SUPERVISOR') return 'operaciones'
-      if (state.role === 'USUARIO') return 'planificador'
+      if (state.role === 'USUARIO') return 'inicio'
       return 'rutas'
     },
   },
@@ -34,17 +43,18 @@ export const useAuthStore = defineStore('auth', {
       this.token = data.token
       this.username = data.username || username
       this.role = normalizarRol(data.role)
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('username', this.username)
-      localStorage.setItem('role', this.role)
+      sessionStorage.setItem('token', data.token)
+      sessionStorage.setItem('username', this.username)
+      sessionStorage.setItem('role', this.role)
     },
     logout() {
       this.token = null
       this.username = null
       this.role = null
-      localStorage.removeItem('token')
-      localStorage.removeItem('username')
-      localStorage.removeItem('role')
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('username')
+      sessionStorage.removeItem('role')
+      limpiarSesionPersistente()
     },
   },
 })

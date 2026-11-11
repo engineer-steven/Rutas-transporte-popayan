@@ -4,7 +4,7 @@ function createApiClient(baseURL) {
   const instance = axios.create({ baseURL, timeout: 10000 })
 
   instance.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token')
+    const token = sessionStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -23,6 +23,9 @@ function createApiClient(baseURL) {
         !isAuthRequest &&
         typeof window !== 'undefined'
       ) {
+        sessionStorage.removeItem('token')
+        sessionStorage.removeItem('username')
+        sessionStorage.removeItem('role')
         localStorage.removeItem('token')
         localStorage.removeItem('username')
         localStorage.removeItem('role')
