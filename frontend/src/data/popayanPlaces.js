@@ -1,0 +1,97 @@
+export const OSM_POPAYAN_NEIGHBORHOODS = [
+  ['Aida Lucía', 2.4601226, -76.582772],
+  ['Alfonso López', 2.4335217, -76.6067037],
+  ['Barrio Aire de Paz', 2.4795433, -76.5693233],
+  ['Barrio Atardecer de Occidente', 2.4464068, -76.6393735],
+  ['Barrio Cerrito de la Paz', 2.4756049, -76.5916249],
+  ['Barrio Chamisales', 2.49315, -76.5690239],
+  ['Barrio Conjunto Cerrado Villa Claudia', 2.4886339, -76.5798624],
+  ['Barrio Los Robles', 2.474433, -76.5630883],
+  ['Barrio Munich', 2.4468245, -76.6329346],
+  ['Barrio Platiado', 2.4209667, -76.6076166],
+  ['Barrio Rivera de Occidente', 2.4465285, -76.6408978],
+  ['Barrio San Eduardo', 2.4794776, -76.5634713],
+  ['Barrio Solidaridad', 2.438711, -76.6285658],
+  ['Barrio Villa del Norte', 2.4751849, -76.5554997],
+  ['Barrio Voces de Esperanza', 2.4783321, -76.6646514],
+  ['Bello Horizonte', 2.4875598, -76.5666658],
+  ['Bosques de Occidente', 2.4501023, -76.6400793],
+  ['Caldas', 2.4436668, -76.6001333],
+  ['Camilo Torres', 2.4498587, -76.622704],
+  ['Canada', 2.4468495, -76.6258246],
+  ['Ciudad Jardín', 2.4554445, -76.5943991],
+  ['Club Residencial Camino Viejo', 2.475305, -76.5766193],
+  ['Colina Campestre', 2.4505151, -76.5854579],
+  ['Condominio Campoalegre', 2.4897579, -76.5834821],
+  ['Conjunto Cerrado El Rincón Coomeva', 2.4773799, -76.557128],
+  ['Conjunto Residencial Río Verde', 2.4937257, -76.5598253],
+  ['El Arenal', 2.4382003, -76.5970667],
+  ['El Cadillal', 2.4466107, -76.6122031],
+  ['El Centro', 2.4403108, -76.6068453],
+  ['El Edén', 2.4496793, -76.626479],
+  ['El Libertador', 2.4438803, -76.6202349],
+  ['El Mirador', 2.4453119, -76.6290552],
+  ['El Modelo', 2.446946, -76.6076929],
+  ['El Portal del Encanto', 2.4588319, -76.5852043],
+  ['Galicia', 2.4605411, -76.5863451],
+  ['Indianápolis', 2.4569579, -76.6454606],
+  ['José María Obando', 2.4453917, -76.6193122],
+  ['Junín', 2.453238, -76.6240543],
+  ['Kennedy', 2.448736, -76.6259962],
+  ['La Aldea', 2.4908613, -76.5630857],
+  ['La Esmeralda', 2.4437838, -76.6157824],
+  ['La María Oriente', 2.4305671, -76.6011348],
+  ['La María Occidente', 2.4545215, -76.6321225],
+  ['La Primavera', 2.4891676, -76.5638763],
+  ['La Violeta', 2.4518776, -76.5835875],
+  ['Las Acacias', 2.4570634, -76.5843584],
+  ['Las Veraneras', 2.4216684, -76.6150392],
+  ['Loma de Cartagena', 2.4392217, -76.6022453],
+  ['Lomas de Granada', 2.46102, -76.6444391],
+  ['Lomas de Pomona', 2.4514519, -76.5891601],
+  ['Los Ángeles', 2.4757311, -76.5690395],
+  ['Los Álamos de Occidente', 2.4483092, -76.6371415],
+  ['Los Comuneros', 2.4313901, -76.610181],
+  ['Los Lagos', 2.4608809, -76.633334],
+  ['Los Sauces', 2.4292111, -76.6025645],
+  ['Moscopán', 2.4351717, -76.6026093],
+  ['Pandiguando', 2.4470007, -76.6167715],
+  ['Perpetuo Socorro', 2.4458633, -76.6214579],
+  ['Popular', 2.4485538, -76.6251916],
+  ['Portal de la Colina', 2.447998, -76.5900463],
+  ['Recuerdo Sur', 2.4255583, -76.6136017],
+  ['San José', 2.4491219, -76.6293812],
+  ['Santa Mónica', 2.4313073, -76.6061968],
+  ['Solidaridad', 2.4416067, -76.62709],
+  ['Torres de Milano', 2.4888343, -76.5854136],
+  ['Túnel Bajo', 2.429765, -76.618065],
+  ['Valle Robledo', 2.4671628, -76.5935116],
+  ['Vegas del Cauca', 2.4582643, -76.6367281],
+  ['Vereda Pomona', 2.4465503, -76.5961664],
+  ['Villa Alicia', 2.4588552, -76.584642],
+  ['Villa Colombia', 2.4601145, -76.6371126],
+  ['Villa de Occidente', 2.4535861, -76.635422],
+  ['Villa del Norte o La Paz', 2.4778321, -76.5601485],
+  ['Yanaconas', 2.4561017, -76.5866911],
+]
+
+export const OSM_POPAYAN_COORDINATES = new Map(
+  OSM_POPAYAN_NEIGHBORHOODS.map(([name, latitude, longitude]) => [
+    name.toLocaleLowerCase('es'),
+    [latitude, longitude],
+  ]),
+)
+
+export function nearestPopayanNeighborhood(latitude, longitude) {
+  if (latitude < 2.38 || latitude > 2.53 || longitude < -76.7 || longitude > -76.54) {
+    return null
+  }
+
+  return OSM_POPAYAN_NEIGHBORHOODS.reduce((closest, place) => {
+    const distance = Math.hypot(
+      (place[1] - latitude) * 111,
+      (place[2] - longitude) * 111 * Math.cos((latitude * Math.PI) / 180),
+    )
+    return distance < closest.distance ? { name: place[0], distance } : closest
+  }, { name: null, distance: Number.POSITIVE_INFINITY }).name
+}
