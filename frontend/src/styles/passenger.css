@@ -280,6 +280,84 @@
   font-size: 0.76rem;
 }
 
+.passenger-plus-guide-prompt {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dce8f4;
+  border-radius: 14px;
+  background: linear-gradient(110deg, #f8fbff, #f0f8f6);
+  color: #5b7088;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  text-decoration: none;
+}
+
+.passenger-plus-guide-prompt > strong {
+  color: #214564;
+  font-size: 0.8rem;
+}
+
+.passenger-plus-guide-action {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+  color: #127b70;
+  font-weight: 800;
+}
+
+.passenger-plus-guide-prompt:hover {
+  border-color: #9cc9bc;
+  box-shadow: 0 5px 16px rgba(27, 86, 79, 0.08);
+}
+
+.passenger-route-legs {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.passenger-route-leg {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.55rem 0.65rem;
+  border-left: 3px solid var(--route-color, #3b82c4);
+  border-radius: 0 9px 9px 0;
+  background: #f3f7fb;
+}
+
+.passenger-route-leg > span {
+  color: #75859a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.passenger-route-leg strong {
+  color: #254663;
+  font-size: 0.72rem;
+}
+
+.passenger-route-leg small {
+  color: #667b91;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.passenger-route-transfer {
+  padding-left: 0.7rem;
+  color: #8a5a08;
+  font-size: 0.67rem;
+}
+
+.passenger-route-transfer strong {
+  color: #79500e;
+}
+
 @media (min-width: 900px) {
   .passenger-topbar {
     min-height: 74px;

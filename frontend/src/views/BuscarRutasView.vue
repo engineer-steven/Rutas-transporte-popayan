@@ -1,10 +1,25 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDownUp, ArrowLeft, ArrowRight, Clock3, Footprints, MapPinned, Search } from '@lucide/vue'
+import {
+  ArrowDownUp,
+  ArrowLeft,
+  ArrowRight,
+  Clock3,
+  Footprints,
+  LocateFixed,
+  MapPinned,
+  Search,
+} from '@lucide/vue'
 import LocationAutocomplete from '@/components/passenger/LocationAutocomplete.vue'
+import PassengerRouteSchematic from '@/components/passenger/PassengerRouteSchematic.vue'
 import OpenStreetMapRoutes from '@/components/maps/OpenStreetMapRoutes.vue'
-import { buscarRutasLocales, POPAYAN_LOCATIONS } from '@/data/passengerRoutes'
+import {
+  buscarRutasLocales,
+  PASSENGER_PLACE_DESCRIPTIONS,
+  POPAYAN_LOCATIONS,
+} from '@/data/passengerRoutes'
+import { nearestPopayanNeighborhood } from '@/data/popayanPlaces'
 import { usePasajeroStore } from '@/stores/pasajero'
 
 const route = useRoute()
@@ -15,20 +30,31 @@ const destination = ref('')
 const searched = ref(false)
 const results = ref([])
 const error = ref('')
+const locating = ref(false)
 
 const queryLabel = computed(() =>
   origin.value && destination.value ? `${origin.value} → ${destination.value}` : '',
 )
+const journey = computed(() =>
+  origin.value && destination.value
+    ? { origin: origin.value, destination: destination.value }
+    : null,
+)
 const routeSegments = computed(() =>
   results.value.flatMap((item) => {
     const legs = item.segmentRoutes || [item]
-    return legs.map((leg) => ({
+    return legs.map((leg, legIndex) => ({
+      routeId: item.id,
+      routeCode: item.code,
       codigo: item.segmentRoutes ? leg.code : item.code,
       empresa: leg.company,
-      origen: leg.stops[0],
-      destino: leg.stops.at(-1),
-      stops: leg.stops,
+      origen: (leg.fullStops || item.fullStops || leg.stops)[0],
+      destino: (leg.fullStops || item.fullStops || leg.stops).at(-1),
+      stops: leg.fullStops || item.fullStops || leg.stops,
+      journeyStops: leg.stops,
       color: leg.color,
+      legIndex,
+      legCount: legs.length,
     }))
   }),
 )
@@ -46,7 +72,7 @@ function buscar() {
   results.value = buscarRutasLocales(origin.value, destination.value)
   searched.value = true
   if (!results.value.length) {
-    error.value = 'No encontramos una ruta de ejemplo para esos puntos. Prueba con otro paradero de Popayán.'
+    error.value = 'No encontramos una ruta de ejemplo. Prueba con un punto de referencia cercano.'
   }
 }
 
@@ -55,6 +81,37 @@ function intercambiar() {
   origin.value = destination.value
   destination.value = previousOrigin
   if (origin.value && destination.value) buscar()
+}
+
+function usarUbicacionActual() {
+  error.value = ''
+  if (!navigator.geolocation) {
+    error.value = 'Tu navegador no admite la ubicación actual.'
+    return
+  }
+
+  locating.value = true
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      const nearest = nearestPopayanNeighborhood(coords.latitude, coords.longitude)
+      if (!nearest) {
+        error.value = 'Tu ubicación parece estar fuera de Popayán.'
+        locating.value = false
+        return
+      }
+
+      origin.value = nearest
+      error.value = `Punto de partida aproximado: ${origin.value}`
+      locating.value = false
+    },
+    (locationError) => {
+      error.value = locationError.code === locationError.PERMISSION_DENIED
+        ? 'Permite el acceso a tu ubicación para usar esta opción.'
+        : 'No se pudo obtener tu ubicación.'
+      locating.value = false
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+  )
 }
 
 function verDetalle(routeOption) {
@@ -91,8 +148,9 @@ onMounted(() => {
           id="search-origin"
           v-model="origin"
           label="Origen"
-          placeholder="Ej. Centro, La Paz..."
+          placeholder="Barrio o punto de referencia"
           :suggestions="POPAYAN_LOCATIONS"
+          :descriptions="PASSENGER_PLACE_DESCRIPTIONS"
         />
         <button
           class="passenger-swap-button"
@@ -106,15 +164,24 @@ onMounted(() => {
           id="search-destination"
           v-model="destination"
           label="Destino"
-          placeholder="Ej. Universidad del Cauca..."
+          placeholder="Barrio o punto de referencia"
           :suggestions="POPAYAN_LOCATIONS"
+          :descriptions="PASSENGER_PLACE_DESCRIPTIONS"
           destination
         />
         <button class="passenger-primary-button passenger-search-submit" type="submit">
           <Search :size="18" aria-hidden="true" /> Buscar rutas
         </button>
       </form>
-      <p class="passenger-example-hint">Prueba: Terminal → Universidad del Cauca</p>
+      <button
+        class="passenger-search-location"
+        type="button"
+        :disabled="locating"
+        @click="usarUbicacionActual"
+      >
+        <LocateFixed :size="16" aria-hidden="true" />
+        {{ locating ? 'Buscando ubicación…' : 'Usar mi ubicación actual' }}
+      </button>
     </section>
 
     <p v-if="error" :class="['passenger-inline-notice', { 'passenger-inline-error': results.length === 0 && searched }]" role="status">
@@ -130,9 +197,26 @@ onMounted(() => {
         <span>{{ results.length }} {{ results.length === 1 ? 'opción' : 'opciones' }}</span>
       </header>
 
-      <section class="passenger-search-map passenger-surface" aria-label="Mapa con todas las rutas disponibles">
-        <OpenStreetMapRoutes :segments="routeSegments" />
+      <section class="passenger-search-map" aria-label="Mapa de las rutas">
+        <OpenStreetMapRoutes
+          :segments="routeSegments"
+          :journey="journey"
+          :show-instructions="pasajero.esPlus"
+        />
       </section>
+
+      <section v-if="pasajero.esPlus" class="passenger-search-map" aria-label="Pasos para tomar cada ruta">
+        <PassengerRouteSchematic :segments="routeSegments" :journey="journey" />
+      </section>
+      <RouterLink
+        v-else
+        class="passenger-plus-guide-prompt"
+        :to="{ name: 'planes', query: { feature: 'guia-ruta' } }"
+      >
+        <strong>¿Quieres instrucciones paso a paso?</strong>
+        <span>Consulta dónde subir y bajar y cómo hacer transbordo con Plus.</span>
+        <span class="passenger-plus-guide-action">Conocer Plus <ArrowRight :size="15" aria-hidden="true" /></span>
+      </RouterLink>
 
       <article v-for="item in results" :key="item.id" class="passenger-search-result passenger-surface">
         <div class="passenger-result-route-mark" :style="{ '--route-color': item.color }">
@@ -150,9 +234,25 @@ onMounted(() => {
         >
           Activa Plus para ver tiempos y transbordos
         </RouterLink>
-        <p class="passenger-result-stops">
+        <div v-if="item.segmentRoutes && pasajero.esPlus" class="passenger-route-legs" aria-label="Pasos del recorrido">
+          <template v-for="(leg, index) in item.segmentRoutes" :key="leg.code">
+            <div class="passenger-route-leg" :style="{ '--route-color': leg.color }">
+            <span>Tramo {{ index + 1 }}</span>
+              <strong>{{ leg.code }} · {{ leg.company }}</strong>
+            <small>Sube en: {{ leg.stops[0] }}</small>
+            <small>Bájate en: {{ leg.stops.at(-1) }}</small>
+            </div>
+            <p v-if="index < item.segmentRoutes.length - 1" class="passenger-route-transfer">
+            Cambia de bus aquí: <strong>{{ item.interchange }}</strong>
+            </p>
+          </template>
+        </div>
+        <p v-else-if="item.segmentRoutes" class="passenger-result-stops">
+          {{ item.segmentRoutes.map((leg) => leg.code).join(' → ') }}
+        </p>
+        <p v-else class="passenger-result-stops">
           <MapPinned :size="15" aria-hidden="true" />
-          {{ item.stops.join(' · ') }}
+          Directo · {{ item.stops[0] }} → {{ item.stops.at(-1) }} · Sin transbordos
         </p>
         <div class="passenger-result-actions">
           <RouterLink
@@ -169,12 +269,11 @@ onMounted(() => {
     </section>
 
     <section v-else-if="searched && !results.length" class="passenger-surface passenger-search-empty">
-      <p>Usa un lugar sugerido para probar las rutas de ejemplo disponibles.</p>
+      <p>Elige otro punto de referencia o barrio cercano.</p>
     </section>
 
     <p class="passenger-demo-disclaimer">
-      Barrios y ubicaciones basados en OpenStreetMap. Los recorridos son de demostración y no son
-      rutas oficiales; confirma la información antes de viajar.
+      Recorridos de demostración, no rutas oficiales. Confirma la información antes de viajar.
     </p>
   </section>
 </template>
@@ -212,10 +311,26 @@ onMounted(() => {
   margin-top: 0.45rem;
 }
 
-.passenger-example-hint {
-  margin: 0.65rem 0.15rem 0;
-  color: #8190a4;
-  font-size: 0.68rem;
+.passenger-search-location {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.65rem 0.1rem 0;
+  padding: 0.35rem 0.6rem;
+  border: 0;
+  border-radius: 9px;
+  background: #f0f7fc;
+  color: #17649d;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.passenger-search-location:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .passenger-search-results {
@@ -352,4 +467,5 @@ onMounted(() => {
   font-size: 0.67rem;
   line-height: 1.5;
 }
+
 </style>

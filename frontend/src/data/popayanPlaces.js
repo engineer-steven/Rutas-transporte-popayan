@@ -81,3 +81,17 @@ export const OSM_POPAYAN_COORDINATES = new Map(
     [latitude, longitude],
   ]),
 )
+
+export function nearestPopayanNeighborhood(latitude, longitude) {
+  if (latitude < 2.38 || latitude > 2.53 || longitude < -76.7 || longitude > -76.54) {
+    return null
+  }
+
+  return OSM_POPAYAN_NEIGHBORHOODS.reduce((closest, place) => {
+    const distance = Math.hypot(
+      (place[1] - latitude) * 111,
+      (place[2] - longitude) * 111 * Math.cos((latitude * Math.PI) / 180),
+    )
+    return distance < closest.distance ? { name: place[0], distance } : closest
+  }, { name: null, distance: Number.POSITIVE_INFINITY }).name
+}

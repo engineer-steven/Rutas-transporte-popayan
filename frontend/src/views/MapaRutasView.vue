@@ -1,51 +1,47 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, LocateFixed } from '@lucide/vue'
+import { ArrowLeft } from '@lucide/vue'
+import PassengerRouteSchematic from '@/components/passenger/PassengerRouteSchematic.vue'
 import OpenStreetMapRoutes from '@/components/maps/OpenStreetMapRoutes.vue'
 import { buscarRutasLocales, PASSENGER_ROUTES } from '@/data/passengerRoutes'
 import { usePasajeroStore } from '@/stores/pasajero'
 
 const route = useRoute()
 const pasajero = usePasajeroStore()
-const map = ref(null)
-const locationError = ref('')
 const origen = computed(() => String(route.query.origin || ''))
 const destino = computed(() => String(route.query.destination || ''))
-
-const alternatives = computed(() =>
+const routeId = computed(() => String(route.query.route || ''))
+const journey = computed(() =>
   origen.value && destino.value
-    ? buscarRutasLocales(origen.value, destino.value)
-    : PASSENGER_ROUTES,
+    ? { origin: origen.value, destination: destino.value }
+    : null,
 )
+
+const alternatives = computed(() => {
+  const routes = origen.value && destino.value
+    ? buscarRutasLocales(origen.value, destino.value)
+    : PASSENGER_ROUTES
+  return routeId.value ? routes.filter((item) => item.id === routeId.value) : routes
+})
 const segments = computed(() =>
   alternatives.value.flatMap((item) => {
     const legs = item.segmentRoutes || [item]
-    return legs.map((leg) => ({
+    return legs.map((leg, legIndex) => ({
+      routeId: item.id,
+      routeCode: item.code,
       codigo: item.segmentRoutes ? leg.code : item.code,
       empresa: leg.company,
-      origen: leg.stops[0],
-      destino: leg.stops.at(-1),
-      stops: leg.stops,
+      origen: (leg.fullStops || item.fullStops || leg.stops)[0],
+      destino: (leg.fullStops || item.fullStops || leg.stops).at(-1),
+      stops: leg.fullStops || item.fullStops || leg.stops,
+      journeyStops: leg.stops,
       color: leg.color,
+      legIndex,
+      legCount: legs.length,
     }))
   }),
 )
-
-function usarUbicacion() {
-  locationError.value = ''
-  if (!navigator.geolocation) {
-    locationError.value = 'Tu navegador no admite ubicación.'
-    return
-  }
-  navigator.geolocation.getCurrentPosition(
-    ({ coords }) => map.value?.centrarEnUbicacion(coords.latitude, coords.longitude),
-    () => {
-      locationError.value = 'No pudimos obtener tu ubicación. Revisa los permisos del navegador.'
-    },
-    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
-  )
-}
 </script>
 
 <template>
@@ -53,29 +49,37 @@ function usarUbicacion() {
     <header class="passenger-page-heading">
       <div>
         <p class="passenger-page-eyebrow">TRANSPORTE URBANO · POPAYÁN</p>
-        <h1>Mapa de rutas</h1>
-        <p>Explora recorridos y paraderos de referencia.</p>
+        <h1>Guía de rutas</h1>
+        <p>Consulta qué bus tomar y dónde hacer cada transbordo.</p>
       </div>
       <RouterLink class="passenger-back-link" :to="{ name: 'inicio' }">
         <ArrowLeft :size="17" aria-hidden="true" /> Inicio
       </RouterLink>
     </header>
 
-    <section class="passenger-full-map passenger-surface">
-      <OpenStreetMapRoutes ref="map" :segments="segments" />
-      <button
-        class="passenger-map-location-button"
-        type="button"
-        aria-label="Centrar mapa en mi ubicación"
-        @click="usarUbicacion"
-      >
-        <LocateFixed :size="19" aria-hidden="true" />
-      </button>
+    <section class="passenger-full-map">
+      <OpenStreetMapRoutes
+        :segments="segments"
+        :journey="journey"
+        :show-instructions="pasajero.esPlus"
+      />
     </section>
-    <p v-if="locationError" class="passenger-inline-error" role="alert">{{ locationError }}</p>
+
+    <section v-if="pasajero.esPlus" class="passenger-full-map">
+      <PassengerRouteSchematic :segments="segments" :journey="journey" />
+    </section>
+    <RouterLink
+      v-else
+      class="passenger-plus-guide-prompt"
+      :to="{ name: 'planes', query: { feature: 'guia-ruta' } }"
+    >
+      <strong>¿Quieres instrucciones paso a paso?</strong>
+      <span>Consulta dónde subir y bajar y cómo hacer transbordo con Plus.</span>
+      <span class="passenger-plus-guide-action">Conocer Plus <span aria-hidden="true">→</span></span>
+    </RouterLink>
 
     <section v-if="!alternatives.length" class="passenger-surface passenger-map-empty" role="status">
-      <strong>No encontramos rutas para ese recorrido.</strong>
+      <strong>No encontramos esa ruta o recorrido.</strong>
       <RouterLink :to="{ name: 'buscar', query: { origin: origen, destination: destino } }">
         Cambiar origen o destino
       </RouterLink>
@@ -93,7 +97,23 @@ function usarUbicacion() {
         </div>
         <div class="passenger-map-route-copy">
           <strong>{{ item.name }}</strong>
-          <span>{{ item.company }} · {{ item.stops.join(' · ') }}</span>
+          <div v-if="item.segmentRoutes && pasajero.esPlus" class="passenger-route-legs" aria-label="Pasos del recorrido">
+            <template v-for="(leg, index) in item.segmentRoutes" :key="leg.code">
+              <div class="passenger-route-leg" :style="{ '--route-color': leg.color }">
+                <span>Tramo {{ index + 1 }}</span>
+                <strong>{{ leg.code }} · {{ leg.company }}</strong>
+                <small>Sube en: {{ leg.stops[0] }}</small>
+                <small>Bájate en: {{ leg.stops.at(-1) }}</small>
+              </div>
+              <p v-if="index < item.segmentRoutes.length - 1" class="passenger-route-transfer">
+                Cambia de bus aquí: <strong>{{ item.interchange }}</strong>
+              </p>
+            </template>
+          </div>
+          <span v-else-if="item.segmentRoutes">
+            {{ item.segmentRoutes.map((leg) => leg.code).join(' → ') }}
+          </span>
+          <span v-else>{{ item.code }} · {{ item.company }} · Directo: {{ item.stops[0] }} → {{ item.stops.at(-1) }}</span>
         </div>
         <span v-if="pasajero.esPlus" class="passenger-map-route-duration">
           ~{{ item.duration }} min · {{ item.transfers }} transbordos
@@ -126,35 +146,7 @@ function usarUbicacion() {
 
 <style>
 .passenger-full-map {
-  position: relative;
-  padding: 0.35rem;
-}
-
-.passenger-full-map .osm-card {
-  border: 0;
-  box-shadow: none;
-}
-
-.passenger-full-map .osm-map {
-  height: min(57vh, 500px);
-  min-height: 310px;
-}
-
-.passenger-map-location-button {
-  position: absolute;
-  z-index: 450;
-  right: 1rem;
-  bottom: 4.8rem;
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 1px solid #d9e3ed;
-  border-radius: 12px;
-  background: #fff;
-  color: #2469a1;
-  box-shadow: 0 3px 12px rgba(21, 51, 79, 0.16);
-  cursor: pointer;
+  min-width: 0;
 }
 
 .passenger-map-route-preview {
@@ -206,12 +198,12 @@ function usarUbicacion() {
   gap: 0.15rem;
 }
 
-.passenger-map-route-copy strong {
+.passenger-map-route-copy > strong {
   color: #1b385b;
   font-size: 0.81rem;
 }
 
-.passenger-map-route-copy span {
+.passenger-map-route-copy > span {
   color: #73829a;
   font-size: 0.68rem;
 }

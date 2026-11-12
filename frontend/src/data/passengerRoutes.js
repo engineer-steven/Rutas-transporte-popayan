@@ -14,6 +14,13 @@ export const POPAYAN_LOCATIONS = [
   ...OSM_POPAYAN_NEIGHBORHOODS.map(([name]) => name),
 ]
 
+export const PASSENGER_PLACE_DESCRIPTIONS = {
+  'Parque Caldas': 'plaza principal centro histórico',
+  'Terminal de Transporte': 'terminal de buses estación',
+  'Universidad del Cauca': 'universidad sede central',
+  'Centro Comercial Campanario': 'centro comercial tiendas',
+}
+
 export const PASSENGER_ROUTES = [
   {
     id: 'r1',
@@ -119,7 +126,7 @@ export const PASSENGER_ROUTES = [
     duration: 20,
     walkingMinutes: 3,
     transfers: 0,
-    color: '#159b8a',
+    color: '#08756a',
     stops: [
       'Recuerdo Sur',
       'Túnel Bajo',
@@ -149,7 +156,7 @@ export const PASSENGER_ROUTES = [
     duration: 16,
     walkingMinutes: 7,
     transfers: 0,
-    color: '#0877df',
+    color: '#4b98e5',
     stops: [
       'Yanaconas',
       'El Portal del Encanto',
@@ -195,7 +202,12 @@ export function buscarRutasLocales(origen, destino) {
   }).map((route) => {
     const startIndex = route.stops.findIndex((stop) => normalizar(stop) === start)
     const endIndex = route.stops.findIndex((stop) => normalizar(stop) === end)
-    return { ...route, stops: route.stops.slice(startIndex, endIndex + 1), transfers: 0 }
+    return {
+      ...route,
+      fullStops: route.stops,
+      stops: route.stops.slice(startIndex, endIndex + 1),
+      transfers: 0,
+    }
   })
 
   if (directas.length) return directas
@@ -230,9 +242,14 @@ export function buscarRutasLocales(origen, destino) {
           ...second.stops.slice(second.stops.indexOf(interchange) + 1, endIndex + 1),
         ],
         segmentRoutes: [
-          { ...first, stops: first.stops.slice(startIndex, first.stops.indexOf(interchange) + 1) },
+          {
+            ...first,
+            fullStops: first.stops,
+            stops: first.stops.slice(startIndex, first.stops.indexOf(interchange) + 1),
+          },
           {
             ...second,
+            fullStops: second.stops,
             stops: second.stops.slice(second.stops.indexOf(interchange), endIndex + 1),
           },
         ],

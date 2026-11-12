@@ -8,6 +8,7 @@ const props = defineProps({
   label: { type: String, required: true },
   placeholder: { type: String, required: true },
   suggestions: { type: Array, required: true },
+  descriptions: { type: Object, default: () => ({}) },
   destination: { type: Boolean, default: false },
 })
 
@@ -19,7 +20,10 @@ const filteredSuggestions = computed(() => {
   const query = props.modelValue.trim().toLocaleLowerCase('es')
   if (!query) return props.suggestions.slice(0, 5)
   return props.suggestions
-    .filter((place) => place.toLocaleLowerCase('es').includes(query))
+    .filter((place) =>
+      place.toLocaleLowerCase('es').includes(query)
+      || props.descriptions[place]?.toLocaleLowerCase('es').includes(query),
+    )
     .slice(0, 5)
 })
 
@@ -89,7 +93,10 @@ function manejarTeclas(event) {
           @mousedown.prevent="elegir(place)"
         >
           <MapPin :size="16" aria-hidden="true" />
-          {{ place }}
+          <span>
+            {{ place }}
+            <small v-if="descriptions[place]">{{ descriptions[place] }}</small>
+          </span>
         </button>
       </li>
     </ul>
@@ -229,6 +236,17 @@ function manejarTeclas(event) {
 .location-suggestions button svg {
   flex: 0 0 auto;
   color: #3a85c5;
+}
+
+.location-suggestions button > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+}
+
+.location-suggestions button small {
+  color: #8492a4;
+  font-size: 0.63rem;
 }
 
 @media (max-width: 480px) {

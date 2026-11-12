@@ -10,7 +10,11 @@ import {
   Search,
 } from '@lucide/vue'
 import LocationAutocomplete from '@/components/passenger/LocationAutocomplete.vue'
-import { POPAYAN_LOCATIONS } from '@/data/passengerRoutes'
+import {
+  PASSENGER_PLACE_DESCRIPTIONS,
+  POPAYAN_LOCATIONS,
+} from '@/data/passengerRoutes'
+import { nearestPopayanNeighborhood } from '@/data/popayanPlaces'
 
 const router = useRouter()
 const origin = ref('')
@@ -25,48 +29,30 @@ function buscar() {
   })
 }
 
-async function usarUbicacion() {
+function usarUbicacion() {
   locationError.value = ''
   if (!navigator.geolocation) {
-    locationError.value = 'Tu navegador no permite consultar la ubicación actual.'
+    locationError.value = 'Tu navegador no permite consultar la ubicación.'
     return
   }
 
   locating.value = true
   navigator.geolocation.getCurrentPosition(
-    async ({ coords }) => {
-      try {
-        const url = new URL('https://nominatim.openstreetmap.org/reverse')
-        url.search = new URLSearchParams({
-          lat: String(coords.latitude),
-          lon: String(coords.longitude),
-          format: 'jsonv2',
-          zoom: '16',
-        })
-        const response = await fetch(url)
-        if (!response.ok) throw new Error('No fue posible consultar el mapa.')
-        const data = await response.json()
-        const address = data.address || {}
-        const location =
-          address.neighbourhood || address.suburb || address.city_district || address.road
-        if (!location) throw new Error('No encontramos el nombre del sector actual.')
-        origin.value = location
-        if (/Popay[aá]n/i.test(address.city || address.town || '')) {
-          locationError.value = ''
-        } else {
-          locationError.value = 'La ubicación se detectó, pero podría estar fuera de Popayán.'
-        }
-      } catch (error) {
-        locationError.value = error.message || 'No se pudo determinar tu ubicación en el mapa.'
-      } finally {
-        locating.value = false
+    ({ coords }) => {
+      const nearest = nearestPopayanNeighborhood(coords.latitude, coords.longitude)
+      if (!nearest) {
+        locationError.value = 'Tu ubicación parece estar fuera de Popayán.'
+      } else {
+        origin.value = nearest
+        locationError.value = `Punto de partida aproximado: ${nearest}`
       }
+      locating.value = false
     },
     (error) => {
       locationError.value =
         error.code === error.PERMISSION_DENIED
-          ? 'Activa el permiso de ubicación en tu navegador para usar esta opción.'
-          : 'No pudimos obtener tu ubicación actual.'
+          ? 'Permite el acceso a tu ubicación para usar esta opción.'
+          : 'No se pudo obtener tu ubicación.'
       locating.value = false
     },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
@@ -110,6 +96,7 @@ async function usarUbicacion() {
           label="Origen"
           placeholder="Mi ubicación o un lugar"
           :suggestions="POPAYAN_LOCATIONS"
+          :descriptions="PASSENGER_PLACE_DESCRIPTIONS"
         />
         <LocationAutocomplete
           id="home-destination"
@@ -117,6 +104,7 @@ async function usarUbicacion() {
           label="Destino"
           placeholder="¿A dónde quieres ir?"
           :suggestions="POPAYAN_LOCATIONS"
+          :descriptions="PASSENGER_PLACE_DESCRIPTIONS"
           destination
         />
         <button class="passenger-home-search-button" type="submit">

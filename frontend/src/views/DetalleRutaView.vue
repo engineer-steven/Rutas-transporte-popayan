@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, Clock3, Crown, Footprints, Heart, MapPin, Repeat2 } from '@lucide/vue'
+import PassengerRouteSchematic from '@/components/passenger/PassengerRouteSchematic.vue'
 import OpenStreetMapRoutes from '@/components/maps/OpenStreetMapRoutes.vue'
 import { buscarRutasLocales, PASSENGER_ROUTES } from '@/data/passengerRoutes'
 import { usePasajeroStore } from '@/stores/pasajero'
@@ -23,15 +24,25 @@ const selectedRoute = computed(() => {
 const segments = computed(() => {
   if (!selectedRoute.value) return []
   const legs = selectedRoute.value.segmentRoutes || [selectedRoute.value]
-  return legs.map((leg) => ({
+  return legs.map((leg, legIndex) => ({
+    routeId: selectedRoute.value.id,
+    routeCode: selectedRoute.value.code,
     codigo: leg.code,
     empresa: leg.company,
-    origen: leg.stops[0],
-    destino: leg.stops.at(-1),
-    stops: leg.stops,
+    origen: (leg.fullStops || selectedRoute.value.fullStops || leg.stops)[0],
+    destino: (leg.fullStops || selectedRoute.value.fullStops || leg.stops).at(-1),
+    stops: leg.fullStops || selectedRoute.value.fullStops || leg.stops,
+    journeyStops: leg.stops,
     color: leg.color,
+    legIndex,
+    legCount: legs.length,
   }))
 })
+const journey = computed(() =>
+  origin.value && destination.value
+    ? { origin: origin.value, destination: destination.value }
+    : null,
+)
 
 function guardarFavorito() {
   if (!pasajero.esPlus) {
@@ -103,7 +114,17 @@ function guardarEnHistorial() {
         <h2>{{ selectedRoute.name }}</h2>
         <p>{{ selectedRoute.company }} · {{ selectedRoute.via }}</p>
       </div>
-      <RouterLink class="passenger-detail-map-link" :to="{ name: 'mapa', query: { route: selectedRoute.id } }">
+      <RouterLink
+        class="passenger-detail-map-link"
+        :to="{
+          name: 'mapa',
+          query: {
+            route: selectedRoute.id,
+            origin: origin || undefined,
+            destination: destination || undefined,
+          },
+        }"
+      >
         Ver mapa
       </RouterLink>
     </article>
@@ -123,12 +144,30 @@ function guardarEnHistorial() {
       <span aria-hidden="true">→</span>
     </RouterLink>
 
-    <section class="passenger-detail-map passenger-surface">
-      <OpenStreetMapRoutes :segments="segments" />
+    <section class="passenger-detail-map">
+      <OpenStreetMapRoutes
+        :segments="segments"
+        :journey="journey"
+        :show-instructions="pasajero.esPlus"
+      />
     </section>
 
-    <section class="passenger-detail-stops passenger-surface">
-      <h2>Paraderos principales</h2>
+    <section v-if="pasajero.esPlus" class="passenger-detail-map">
+      <PassengerRouteSchematic :segments="segments" :journey="journey" />
+    </section>
+    <RouterLink
+      v-else
+      class="passenger-plus-guide-prompt passenger-detail-map"
+      :to="{ name: 'planes', query: { feature: 'guia-ruta' } }"
+    >
+      <strong>¿Quieres instrucciones paso a paso?</strong>
+      <span>Consulta dónde subir y bajar y cómo hacer transbordo con Plus.</span>
+      <span class="passenger-plus-guide-action">Conocer Plus <span aria-hidden="true">→</span></span>
+    </RouterLink>
+
+    <section v-if="pasajero.esPlus" class="passenger-detail-stops passenger-surface">
+      <h2>Puntos de referencia del recorrido</h2>
+      <p class="passenger-detail-stops-note">Estos sectores orientan el recorrido de demostración; no son paraderos oficiales verificados.</p>
       <ol>
         <li v-for="(stop, index) in selectedRoute.stops" :key="stop">
           <span :class="{ 'passenger-stop-final': index === selectedRoute.stops.length - 1 }">
@@ -256,16 +295,6 @@ function guardarEnHistorial() {
 
 .passenger-detail-map {
   margin-top: 0.65rem;
-  padding: 0.3rem;
-}
-
-.passenger-detail-map .osm-card {
-  border: 0;
-  box-shadow: none;
-}
-
-.passenger-detail-map .osm-map {
-  height: 245px;
 }
 
 .passenger-detail-stops {
@@ -276,6 +305,13 @@ function guardarEnHistorial() {
 .passenger-detail-stops h2 {
   color: #173a5d;
   font-size: 0.9rem;
+}
+
+.passenger-detail-stops-note {
+  margin-top: 0.3rem;
+  color: #78879a;
+  font-size: 0.67rem;
+  line-height: 1.45;
 }
 
 .passenger-detail-stops ol {
