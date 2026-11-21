@@ -192,7 +192,7 @@ def get_routes():
     _, error = _require_authenticated()
     if error:
         return error
-    ok, result = _supabase_call("GET", "routes?select=*&status=eq.ACTIVA&order=id.asc")
+    ok, result = _supabase_call("GET", "rutas?select=*&status=eq.ACTIVA&order=id.asc")
     if not ok:
         return jsonify({"success": False, "error": "No se pudieron cargar las rutas", "mensaje": result}), 502
     return _routes_response(result if isinstance(result, list) else [])
@@ -210,7 +210,7 @@ def search_routes():
 
     termino = quote(f"*{zona}*", safe="*")
     endpoint = (
-        "routes?select=*&status=eq.ACTIVA&or="
+        "rutas?select=*&status=eq.ACTIVA&or="
         f"(origin.ilike.{termino},destination.ilike.{termino},company.ilike.{termino},code.ilike.{termino})&order=id.asc"
     )
     ok, result = _supabase_call("GET", endpoint)
@@ -232,7 +232,7 @@ def create_route():
     if not all([payload["code"], payload["company"], payload["origin"], payload["destination"]]):
         return jsonify({"success": False, "error": "Campos requeridos: code, company, origin, destination"}), 400
 
-    ok, result = _supabase_call("POST", "routes", payload)
+    ok, result = _supabase_call("POST", "rutas", payload)
     if not ok:
         return jsonify({"success": False, "error": "No se pudo insertar la ruta", "mensaje": result}), 502
     return jsonify({"success": True, "data": result}), 201
@@ -249,7 +249,7 @@ def update_route(route_id):
     except (TypeError, ValueError):
         return jsonify({"success": False, "error": "La tarifa debe ser numérica"}), 400
 
-    ok, result = _supabase_call("PATCH", f"routes?id=eq.{route_id}", payload)
+    ok, result = _supabase_call("PATCH", f"rutas?id=eq.{route_id}", payload)
     if not ok:
         return jsonify({"success": False, "error": "No se pudo actualizar la ruta", "mensaje": result}), 502
     if not result:
@@ -264,7 +264,7 @@ def delete_route(route_id):
     if error:
         return error
 
-    ok, result = _supabase_call("DELETE", f"routes?id=eq.{route_id}")
+    ok, result = _supabase_call("DELETE", f"rutas?id=eq.{route_id}")
     if not ok:
         return jsonify({"success": False, "error": "No se pudo eliminar la ruta", "mensaje": result}), 502
     if not result:
