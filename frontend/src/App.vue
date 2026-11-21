@@ -13,13 +13,14 @@ const auth = useAuthStore()
   <div
     :class="[
       { 'auth-layout': route.meta.authLayout },
+      { 'public-layout': route.meta.publicLayout },
       { 'passenger-layout': auth.estaAutenticado && auth.role === 'USUARIO' && !route.meta.authLayout },
     ]"
   >
     <PassengerHeader
       v-if="auth.estaAutenticado && auth.role === 'USUARIO' && !route.meta.authLayout"
     />
-    <NavBar v-else-if="!route.meta.authLayout" />
+    <NavBar v-else-if="!route.meta.authLayout && !route.meta.publicLayout" />
     <main :class="{ 'passenger-main': auth.estaAutenticado && auth.role === 'USUARIO' }">
       <RouterView />
     </main>

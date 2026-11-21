@@ -15,16 +15,16 @@ import FavoritosView from '@/views/FavoritosView.vue'
 import HistorialView from '@/views/HistorialView.vue'
 import PlanesView from '@/views/PlanesView.vue'
 import PerfilView from '@/views/PerfilView.vue'
+import HomeView from '@/views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: () => {
-        const auth = useAuthStore()
-        return auth.estaAutenticado && auth.role === 'USUARIO' ? { name: 'inicio' } : { name: 'rutas' }
-      },
+      name: 'home',
+      component: HomeView,
+      meta: { publicLayout: true },
     },
     {
       path: '/login',
