@@ -2,11 +2,13 @@ import os
 import sys
 import json
 import base64
+import binascii
 import hashlib
 import hmac
 import datetime
 import traceback
 import requests
+from urllib.parse import quote
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -122,6 +124,152 @@ def _create_jwt(user: dict) -> str:
     sig = hmac.new(JWT_SECRET.encode(), msg, hashlib.sha256).digest()
     s_b64 = base64.urlsafe_b64encode(sig).rstrip(b'=').decode()
     return f"{h_b64}.{p_b64}.{s_b64}"
+
+
+def _jwt_payload_from_request():
+    """Lee y valida el JWT emitido por este mismo gateway."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+
+    token = auth_header.split(" ", 1)[1].strip()
+    try:
+        header_b64, payload_b64, signature_b64 = token.split(".")
+        signing_input = f"{header_b64}.{payload_b64}".encode("utf-8")
+        expected = hmac.new(JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest()
+        padding = "=" * (-len(signature_b64) % 4)
+        received = base64.urlsafe_b64decode((signature_b64 + padding).encode("ascii"))
+        if not hmac.compare_digest(expected, received):
+            return None
+
+        payload_padding = "=" * (-len(payload_b64) % 4)
+        payload = json.loads(
+            base64.urlsafe_b64decode((payload_b64 + payload_padding).encode("ascii")).decode("utf-8")
+        )
+        if int(payload.get("exp", 0)) < int(datetime.datetime.utcnow().timestamp()):
+            return None
+        return payload
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError, binascii.Error):
+        return None
+
+
+def _require_admin():
+    payload = _jwt_payload_from_request()
+    if not payload:
+        return None, (jsonify({"success": False, "error": "No autorizado"}), 401)
+    if str(payload.get("role", "")).strip().upper() != "ADMIN":
+        return None, (jsonify({"success": False, "error": "Permiso denegado"}), 403)
+    return payload, None
+
+
+def _require_authenticated():
+    payload = _jwt_payload_from_request()
+    if not payload:
+        return None, (jsonify({"success": False, "error": "No autorizado"}), 401)
+    return payload, None
+
+
+def _route_payload(data):
+    """Normaliza los campos que comparte el frontend con la tabla routes."""
+    return {
+        "code": str(data.get("code", "")).strip(),
+        "company": str(data.get("company", "")).strip(),
+        "origin": str(data.get("origin", "")).strip(),
+        "destination": str(data.get("destination", "")).strip(),
+        "fare": float(data.get("fare", 0) or 0),
+        "schedule": str(data.get("schedule", "")).strip(),
+        "status": str(data.get("status", "ACTIVA")).strip().upper(),
+    }
+
+
+def _routes_response(routes):
+    return jsonify({"success": True, "total": len(routes), "data": routes}), 200
+
+
+@app.route("/rutas", methods=["GET"])
+@app.route("/api/rutas", methods=["GET"])
+def get_routes():
+    _, error = _require_authenticated()
+    if error:
+        return error
+    ok, result = _supabase_call("GET", "routes?select=*&status=eq.ACTIVA&order=id.asc")
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudieron cargar las rutas", "mensaje": result}), 502
+    return _routes_response(result if isinstance(result, list) else [])
+
+
+@app.route("/rutas/buscar", methods=["GET"])
+@app.route("/api/rutas/buscar", methods=["GET"])
+def search_routes():
+    _, error = _require_authenticated()
+    if error:
+        return error
+    zona = request.args.get("zona", "").strip()
+    if not zona:
+        return jsonify({"success": False, "error": "Parametro 'zona' requerido"}), 400
+
+    termino = quote(f"*{zona}*", safe="*")
+    endpoint = (
+        "routes?select=*&status=eq.ACTIVA&or="
+        f"(origin.ilike.{termino},destination.ilike.{termino},company.ilike.{termino},code.ilike.{termino})&order=id.asc"
+    )
+    ok, result = _supabase_call("GET", endpoint)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo buscar la ruta", "mensaje": result}), 502
+    return _routes_response(result if isinstance(result, list) else [])
+
+
+@app.route("/rutas", methods=["POST"])
+@app.route("/api/rutas", methods=["POST"])
+def create_route():
+    _, error = _require_admin()
+    if error:
+        return error
+    try:
+        payload = _route_payload(request.get_json(silent=True) or {})
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "La tarifa debe ser numérica"}), 400
+    if not all([payload["code"], payload["company"], payload["origin"], payload["destination"]]):
+        return jsonify({"success": False, "error": "Campos requeridos: code, company, origin, destination"}), 400
+
+    ok, result = _supabase_call("POST", "routes", payload)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo insertar la ruta", "mensaje": result}), 502
+    return jsonify({"success": True, "data": result}), 201
+
+
+@app.route("/rutas/<int:route_id>", methods=["PUT"])
+@app.route("/api/rutas/<int:route_id>", methods=["PUT"])
+def update_route(route_id):
+    _, error = _require_admin()
+    if error:
+        return error
+    try:
+        payload = _route_payload(request.get_json(silent=True) or {})
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "La tarifa debe ser numérica"}), 400
+
+    ok, result = _supabase_call("PATCH", f"routes?id=eq.{route_id}", payload)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo actualizar la ruta", "mensaje": result}), 502
+    if not result:
+        return jsonify({"success": False, "error": f"Ruta {route_id} no encontrada"}), 404
+    return jsonify({"success": True, "data": result[0] if isinstance(result, list) else result}), 200
+
+
+@app.route("/rutas/<int:route_id>", methods=["DELETE"])
+@app.route("/api/rutas/<int:route_id>", methods=["DELETE"])
+def delete_route(route_id):
+    _, error = _require_admin()
+    if error:
+        return error
+
+    ok, result = _supabase_call("DELETE", f"routes?id=eq.{route_id}")
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo eliminar la ruta", "mensaje": result}), 502
+    if not result:
+        return jsonify({"success": False, "error": f"Ruta {route_id} no encontrada"}), 404
+    return jsonify({"success": True, "mensaje": f"Ruta {route_id} eliminada correctamente"}), 200
 
 
 # ==============================================================================
