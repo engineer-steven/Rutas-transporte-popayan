@@ -495,10 +495,12 @@ def deployed_dispatch(operation):
     if error:
         return error
     data = request.get_json(silent=True) or {}
-    route, route_error, route_status = _dispatch_response(data)
-    if route_error:
-        return route_error, route_status
-    route_id = int(data.get("route_id", 0))
+    route = {}
+    route_id = int(data.get("route_id", 0) or 0)
+    if operation != "rotacion-conductor":
+        route, route_error, route_status = _dispatch_response(data)
+        if route_error:
+            return route_error, route_status
     if operation == "horario":
         start = data.get("hora_inicio", "05:00")
         end = data.get("hora_fin", "22:00")
