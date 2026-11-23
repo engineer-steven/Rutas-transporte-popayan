@@ -437,6 +437,57 @@ def _dispatch_response(data):
     return route, None, None
 
 
+def _schedule_franja(hour):
+    if 5 <= hour < 7:
+        return "Madrugada"
+    if 7 <= hour < 9:
+        return "Pico Manana"
+    if 9 <= hour < 11:
+        return "Manana Media"
+    if 11 <= hour < 14:
+        return "Pico Mediodia"
+    if 14 <= hour < 17:
+        return "Tarde"
+    if 17 <= hour < 20:
+        return "Pico Tarde"
+    if 20 <= hour < 23:
+        return "Noche"
+    return "Madrugada Nocturna"
+
+
+def _schedule_frequency(hour, day_type):
+    rules = {
+        "HABIL": ((5, 7, 20), (7, 9, 8), (9, 11, 15), (11, 14, 10), (14, 17, 15), (17, 20, 8)),
+        "SABADO": ((6, 9, 12), (9, 14, 10), (14, 19, 15)),
+        "DOMINGO": ((7, 10, 20), (10, 14, 15), (14, 18, 20)),
+        "FESTIVO": ((8, 12, 25), (12, 16, 20), (16, 20, 25)),
+    }
+    for start, end, minutes in rules[day_type]:
+        if start <= hour < end:
+            return minutes
+    return {"HABIL": 20, "SABADO": 25, "DOMINGO": 30, "FESTIVO": 35}[day_type]
+
+
+def _generate_schedule(day_type, start_text, end_text):
+    day_type = str(day_type or "HABIL").strip().upper()
+    if day_type not in {"HABIL", "SABADO", "DOMINGO", "FESTIVO"}:
+        raise ValueError("tipo_dia invalido. Use HABIL, SABADO, DOMINGO o FESTIVO")
+    try:
+        current = datetime.datetime.strptime(str(start_text), "%H:%M")
+        finish = datetime.datetime.strptime(str(end_text), "%H:%M")
+    except ValueError as exc:
+        raise ValueError("Formato de hora invalido. Use HH:MM") from exc
+    if finish < current:
+        raise ValueError("hora_fin debe ser posterior o igual a hora_inicio")
+    departures = []
+    while current <= finish:
+        frequency = _schedule_frequency(current.hour, day_type)
+        departures.append({"hora_salida": current.strftime("%H:%M"), "frecuencia_min": frequency, "franja": _schedule_franja(current.hour)})
+        current += datetime.timedelta(minutes=frequency)
+    average = round(sum(item["frecuencia_min"] for item in departures) / max(len(departures), 1), 1)
+    return {"tipo_dia": day_type, "hora_inicio": str(start_text), "hora_fin": str(end_text), "total_salidas": len(departures), "frecuencia_promedio_min": average, "tabla_horaria": departures, "nota": f"Horario generado con {len(departures)} despachos. Frecuencia variable por franja horaria de Popayan."}
+
+
 @app.route("/despacho/<path:operation>", methods=["POST"])
 @app.route("/api/despacho/<path:operation>", methods=["POST"])
 def deployed_dispatch(operation):
@@ -451,6 +502,12 @@ def deployed_dispatch(operation):
     if operation == "horario":
         start = data.get("hora_inicio", "05:00")
         end = data.get("hora_fin", "22:00")
+        try:
+            result = _generate_schedule(data.get("tipo_dia", "HABIL"), start, end)
+        except ValueError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        result["route_id"] = route_id
+        return jsonify({"success": True, "data": result}), 200
         return jsonify({"success": True, "data": {"route_id": route_id, "tipo_dia": data.get("tipo_dia", "HABIL"), "hora_inicio": start, "hora_fin": end, "total_salidas": 0, "frecuencia_promedio_min": 15, "tabla_horaria": [], "nota": "Horario disponible para parametrización operativa."}}), 200
     if operation == "frecuencias":
         hora = int(data.get("hora", 12) or 12)
