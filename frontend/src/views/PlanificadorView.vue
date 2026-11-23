@@ -174,7 +174,7 @@ async function solicitar(clave, limpiarResultado, guardarResultado, solicitud, f
 
   try {
     const respuesta = await solicitud()
-    guardarResultado(respuesta.data)
+    guardarResultado(respuesta.data?.data ?? respuesta.data)
   } catch (e) {
     errores[clave] = mensajeError(e, fallback)
   } finally {
@@ -231,10 +231,13 @@ async function buscarViajePasajero() {
   const tipos = ['directo', 'transbordo']
 
   respuestas.forEach((respuesta, index) => {
-    if (respuesta.status === 'fulfilled' && respuesta.value.data.encontrado) {
+    const datos = respuesta.status === 'fulfilled'
+      ? (respuesta.value.data?.data ?? respuesta.value.data)
+      : null
+    if (datos?.encontrado) {
       alternativasPasajero.push({
         tipo: tipos[index],
-        resultado: respuesta.value.data,
+        resultado: datos,
       })
     }
   })
