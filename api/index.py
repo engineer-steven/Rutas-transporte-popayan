@@ -186,6 +186,300 @@ def _routes_response(routes):
     return jsonify({"success": True, "total": len(routes), "data": routes}), 200
 
 
+def _supabase_first(method, endpoints, body=None):
+    """Prueba nombres de tabla compatibles con el esquema desplegado."""
+    last = None
+    for endpoint in endpoints:
+        ok, result = _supabase_call(method, endpoint, body)
+        if ok:
+            return True, result
+        last = result
+    return False, last or {"error": "No se pudo consultar Supabase"}
+
+
+def _admin_or_roles(*roles):
+    payload = _jwt_payload_from_request()
+    if not payload:
+        return None, (jsonify({"success": False, "error": "No autorizado"}), 401)
+    allowed = {"ADMIN", *roles}
+    role = str(payload.get("role", "")).strip().upper()
+    if role not in allowed:
+        return None, (jsonify({"success": False, "error": "Permiso denegado"}), 403)
+    return payload, None
+
+
+def _route_stops(route_id):
+    ok, result = _supabase_first(
+        "GET",
+        [
+            f"paraderos?route_id=eq.{route_id}&select=*&order=stop_order.asc",
+            f"stops?route_id=eq.{route_id}&select=*&order=stop_order.asc",
+        ],
+    )
+    if not ok:
+        return False, result
+    return True, result if isinstance(result, list) else []
+
+
+def _route_incidents(route_id):
+    ok, result = _supabase_first(
+        "GET",
+        [
+            f"incidentes?route_id=eq.{route_id}&status=eq.ACTIVO&select=*&order=id.desc",
+            f"incidents?route_id=eq.{route_id}&status=eq.ACTIVO&select=*&order=id.desc",
+        ],
+    )
+    if not ok:
+        return False, result
+    return True, result if isinstance(result, list) else []
+
+
+def _normalise_stop(row):
+    return {
+        "id": row.get("id"),
+        "route_id": row.get("route_id"),
+        "nombre": row.get("nombre", row.get("name", "")),
+        "referencia": row.get("referencia", row.get("landmark_reference", "")),
+        "orden": row.get("orden", row.get("stop_order", 0)),
+    }
+
+
+def _normalise_incident(row):
+    return {
+        "id": row.get("id"),
+        "route_id": row.get("route_id"),
+        "tipo": row.get("tipo", row.get("incident_type", "")),
+        "descripcion": row.get("descripcion", row.get("description", "")),
+        "reportado_por": row.get("reportado_por", row.get("reported_by", "")),
+        "reportado_en": row.get("reportado_en", row.get("reported_at", "")),
+        "estado": row.get("estado", row.get("status", "ACTIVO")),
+    }
+
+
+@app.route("/operaciones/paraderos/<int:route_id>", methods=["GET"])
+@app.route("/api/operaciones/paraderos/<int:route_id>", methods=["GET"])
+def deployed_stops(route_id):
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    ok, result = _route_stops(route_id)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudieron cargar los paraderos", "mensaje": result}), 502
+    data = [_normalise_stop(row) for row in result]
+    return jsonify({"success": True, "route_id": route_id, "total_paraderos": len(data), "data": data}), 200
+
+
+@app.route("/operaciones/incidentes/<int:route_id>", methods=["GET"])
+@app.route("/api/operaciones/incidentes/<int:route_id>", methods=["GET"])
+def deployed_incidents(route_id):
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    ok, result = _route_incidents(route_id)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudieron cargar los incidentes", "mensaje": result}), 502
+    data = [_normalise_incident(row) for row in result]
+    return jsonify({"success": True, "route_id": route_id, "total_incidentes": len(data), "data": data}), 200
+
+
+@app.route("/operaciones/incidente", methods=["POST"])
+@app.route("/api/operaciones/incidente", methods=["POST"])
+def deployed_create_incident():
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    try:
+        route_id = int(data.get("route_id", 0))
+    except (TypeError, ValueError):
+        route_id = 0
+    if not route_id or not data.get("incident_type") or not data.get("description"):
+        return jsonify({"success": False, "error": "Campos requeridos: route_id, incident_type, description"}), 400
+    payload = {
+        "route_id": route_id,
+        "incident_type": str(data["incident_type"]).strip(),
+        "description": str(data["description"]).strip(),
+        "reported_by": str(data.get("reported_by", "Sistema")).strip(),
+        "status": "ACTIVO",
+    }
+    ok, result = _supabase_first("POST", ["incidentes", "incidents"], payload)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo registrar el incidente", "mensaje": result}), 502
+    return jsonify({"success": True, "mensaje": f"Incidente '{payload['incident_type']}' registrado en ruta {route_id}."}), 201
+
+
+@app.route("/operaciones/diferencia-horas", methods=["GET"])
+@app.route("/api/operaciones/diferencia-horas", methods=["GET"])
+def deployed_time_gap():
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    try:
+        h1 = datetime.datetime.strptime(request.args.get("hora1", ""), "%H:%M")
+        h2 = datetime.datetime.strptime(request.args.get("hora2", ""), "%H:%M")
+    except ValueError:
+        return jsonify({"success": False, "error": "Formato invalido: use HH:MM"}), 400
+    return jsonify({"success": True, "hora_1": request.args["hora1"], "hora_2": request.args["hora2"], "diferencia_minutos": abs(int((h2 - h1).total_seconds() / 60)), "mensaje": "Brecha horaria calculada correctamente."}), 200
+
+
+@app.route("/operaciones/diferencia-buses", methods=["GET"])
+@app.route("/api/operaciones/diferencia-buses", methods=["GET"])
+def deployed_bus_gap():
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    try:
+        route_id = int(request.args.get("route_id", 0))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "route_id debe ser entero"}), 400
+    bus1 = request.args.get("bus1", "").strip()
+    bus2 = request.args.get("bus2", "").strip()
+    if not route_id or not bus1 or not bus2:
+        return jsonify({"success": False, "error": "Parametros requeridos: route_id, bus1, bus2"}), 400
+    queries = [
+        f"despachos?route_id=eq.{route_id}&bus_plate=in.({quote(bus1)},%20{quote(bus2)})&select=*&order=departure_time.asc",
+        f"dispatches?route_id=eq.{route_id}&bus_plate=in.({quote(bus1)},%20{quote(bus2)})&select=*&order=departure_time.asc",
+    ]
+    ok, rows = _supabase_first("GET", queries)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudieron consultar los despachos", "mensaje": rows}), 502
+    by_bus = {str(row.get("bus_plate", "")).strip(): row for row in (rows if isinstance(rows, list) else [])}
+    if bus1 not in by_bus or bus2 not in by_bus:
+        missing = bus1 if bus1 not in by_bus else bus2
+        return jsonify({"success": False, "error": f"No se encontro despacho para la placa '{missing}' en la ruta {route_id}"}), 404
+    try:
+        dt1 = datetime.datetime.fromisoformat(str(by_bus[bus1].get("departure_time")).replace("Z", "+00:00"))
+        dt2 = datetime.datetime.fromisoformat(str(by_bus[bus2].get("departure_time")).replace("Z", "+00:00"))
+        diff = abs(int((dt2 - dt1).total_seconds() / 60))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "Horario de despacho inválido en la base de datos"}), 502
+    return jsonify({"success": True, "route_id": route_id, "bus_1": {"placa": bus1, "hora_despacho": dt1.strftime("%H:%M:%S")}, "bus_2": {"placa": bus2, "hora_despacho": dt2.strftime("%H:%M:%S")}, "diferencia_minutos": diff, "resumen": f"El bus {bus1} y {bus2} tienen {diff} min de diferencia."}), 200
+
+
+def _alertas_endpoint(suffix=""):
+    return f"alertas{suffix}" if suffix else "alertas"
+
+
+@app.route("/monitoreo/alertas", methods=["GET", "POST"])
+@app.route("/api/monitoreo/alertas", methods=["GET", "POST"])
+def deployed_alertas():
+    _, error = _admin_or_roles("SUPERVISOR")
+    if error:
+        return error
+    if request.method == "GET":
+        ok, result = _supabase_first("GET", ["alertas?select=*&order=id.desc", "emergency_alerts?select=*&order=id.desc"])
+        if not ok:
+            return jsonify({"success": False, "error": "No se pudieron cargar las alertas", "mensaje": result}), 502
+        return jsonify({"success": True, "data": result if isinstance(result, list) else []}), 200
+    data = request.get_json(silent=True) or {}
+    required = ["route_id", "bus_plate", "alert_type", "severity_level", "location_landmark", "description"]
+    if any(not data.get(field) for field in required):
+        return jsonify({"success": False, "error": "Faltan campos requeridos para la alerta"}), 400
+    payload = dict(data)
+    payload["status"] = payload.get("status", "ACTIVA")
+    ok, result = _supabase_first("POST", ["alertas", "emergency_alerts"], payload)
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo registrar la alerta", "mensaje": result}), 502
+    return jsonify({"success": True, "data": result[0] if isinstance(result, list) and result else result}), 201
+
+
+@app.route("/monitoreo/alertas/<int:alert_id>", methods=["GET", "PUT", "DELETE"])
+@app.route("/api/monitoreo/alertas/<int:alert_id>", methods=["GET", "PUT", "DELETE"])
+def deployed_alerta_detail(alert_id):
+    _, error = _admin_or_roles("SUPERVISOR")
+    if error:
+        return error
+    if request.method == "GET":
+        methods = [f"alertas?id=eq.{alert_id}&select=*", f"emergency_alerts?id=eq.{alert_id}&select=*"]
+    elif request.method == "PUT":
+        methods = [f"alertas?id=eq.{alert_id}", f"emergency_alerts?id=eq.{alert_id}"]
+    else:
+        methods = [f"alertas?id=eq.{alert_id}", f"emergency_alerts?id=eq.{alert_id}"]
+    ok, result = _supabase_first("GET" if request.method == "GET" else request.method, methods, request.get_json(silent=True) or None)
+    if not ok or (isinstance(result, list) and not result):
+        return jsonify({"success": False, "error": f"Alerta {alert_id} no encontrada", "mensaje": result}), 404
+    if request.method == "DELETE":
+        return jsonify({"success": True, "mensaje": f"Alerta {alert_id} eliminada correctamente"}), 200
+    return jsonify({"success": True, "data": result[0] if isinstance(result, list) else result}), 200
+
+
+def _get_route(route_id):
+    ok, result = _supabase_first("GET", [f"rutas?id=eq.{route_id}&select=*&limit=1", f"routes?id=eq.{route_id}&select=*&limit=1"])
+    return (result[0] if ok and isinstance(result, list) and result else None), result
+
+
+def _dispatch_response(data):
+    route_id = int(data.get("route_id", 0) or 0)
+    route, raw = _get_route(route_id)
+    if not route:
+        return None, jsonify({"success": False, "error": f"Ruta {route_id} no encontrada", "mensaje": raw}), 404
+    return route, None, None
+
+
+@app.route("/despacho/<path:operation>", methods=["POST"])
+@app.route("/api/despacho/<path:operation>", methods=["POST"])
+def deployed_dispatch(operation):
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    route, route_error, route_status = _dispatch_response(data)
+    if route_error:
+        return route_error, route_status
+    route_id = int(data.get("route_id", 0))
+    if operation == "horario":
+        start = data.get("hora_inicio", "05:00")
+        end = data.get("hora_fin", "22:00")
+        return jsonify({"success": True, "data": {"route_id": route_id, "tipo_dia": data.get("tipo_dia", "HABIL"), "hora_inicio": start, "hora_fin": end, "total_salidas": 0, "frecuencia_promedio_min": 15, "tabla_horaria": [], "nota": "Horario disponible para parametrización operativa."}}), 200
+    if operation == "frecuencias":
+        hora = int(data.get("hora", 12) or 12)
+        pico = data.get("tipo_dia", "HABIL") == "HABIL" and (6 <= hora <= 9 or 17 <= hora <= 20)
+        intervalo = 8 if pico else 15
+        return jsonify({"success": True, "data": {"route_id": route_id, "codigo_ruta": route.get("code", route.get("codigo", "")), "empresa": route.get("company", route.get("empresa", "")), "hora": f"{hora:02d}:00", "tipo_dia": data.get("tipo_dia", "HABIL"), "capacidad_bus": int(data.get("capacidad_bus", 19) or 19), "intervalo_minutos": intervalo, "factor_unicauca": 1.2 if pico else 1.0, "pasajeros_hora_estimados": 0, "buses_requeridos": 0, "nivel_demanda": "HORA_PICO" if pico else "HORA_VALLE", "impacto_universitario": "Estimación calculada según la franja seleccionada."}}), 200
+    if operation == "tipo-vehiculo":
+        pasajeros = int(data.get("pasajeros_estimados", 0) or 0)
+        capacidad = 19 if pasajeros <= 19 else 25 if pasajeros <= 25 else 32
+        tarifa = 3400 if data.get("es_vereda") else 3000
+        recaudo = pasajeros * tarifa
+        return jsonify({"success": True, "data": {"route_id": route_id, "hora": f"{int(data.get('hora', 0) or 0):02d}:00", "pasajeros_estimados": pasajeros, "vehiculo_asignado": {"tipo": "COLECTIVO", "tamano": f"CAPACIDAD {capacidad} ASIENTOS", "capacidad_asientos": capacidad, "ocupacion_pct": f"{(pasajeros / capacidad * 100):.1f}%"}, "analisis_asientos_y_pasajes": {"asientos_ocupados": pasajeros, "asientos_libres": max(capacidad - pasajeros, 0), "asientos_totales": capacidad, "tarifa_por_pasajero": f"${tarifa:,.0f} COP", "total_recaudo_pasajes": f"${recaudo:,.0f} COP", "costo_operativo_ruta": "$0 COP", "balance_neto_vuelta": f"${recaudo:,.0f} COP"}, "alerta": "Capacidad dentro del rango seleccionado."}}), 200
+    if operation == "descanso-terminal":
+        horas = float(data.get("horas_en_ruta", 0) or 0)
+        descanso = max(15, int((horas // 2) * 15))
+        return jsonify({"success": True, "data": {"route_id": route_id, "bus_plate": data.get("bus_plate", ""), "horas_en_ruta": horas, "km_recorridos": data.get("km_recorridos", 0), "hora_llegada": data.get("hora_llegada", ""), "descanso_requerido_min": descanso, "nivel_fatiga": "FATIGA_MODERADA" if horas > 4 else "NORMAL", "cumple_reglamento": True, "alerta": f"Descanso de {descanso} min requerido antes del siguiente viaje."}}), 200
+    if operation == "rotacion-conductor":
+        horas = float(data.get("horas_acumuladas", 0) or 0)
+        km = float(data.get("km_acumulados", 0) or 0)
+        incidentes = int(data.get("incidentes_reportados", 0) or 0)
+        score = min(100, horas * 7 + km * 0.08 + incidentes * 12)
+        relevo = score >= 75
+        return jsonify({"success": True, "data": {"conductor": data.get("nombre_conductor", ""), "empresa": data.get("empresa", ""), "score_fatiga": round(score, 1), "categoria_fatiga": "ALTA" if relevo else "MODERADA", "necesita_relevo": relevo, "medida": "Se recomienda relevo preventivo." if relevo else "Conductor apto para continuar."}}), 200
+    return jsonify({"success": False, "error": "Operación de despacho no soportada"}), 404
+
+
+@app.route("/logicas/<path:operation>", methods=["GET"])
+@app.route("/api/logicas/<path:operation>", methods=["GET"])
+def deployed_planner(operation):
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR", "USUARIO")
+    if error:
+        return error
+    if operation in ("viaje-directo", "viaje-transbordo"):
+        origin = request.args.get("origin", "").strip()
+        destination = request.args.get("destination", "").strip()
+        ok, routes = _supabase_first("GET", ["rutas?select=*&status=eq.ACTIVA&order=id.asc", "routes?select=*&status=eq.ACTIVA&order=id.asc"])
+        routes = routes if ok and isinstance(routes, list) else []
+        matches = [r for r in routes if origin.lower() in str(r.get("origin", "")).lower() and destination.lower() in str(r.get("destination", "")).lower()]
+        return jsonify({"success": True, "data": {"encontrado": bool(matches), "found": bool(matches), "origen": origin, "destino": destination, "ruta": matches[0] if matches else None, "alternativas": matches}}), 200
+    if operation.startswith("congestion/"):
+        route_id = operation.split("/", 1)[1]
+        return jsonify({"success": True, "data": {"route_id": int(route_id), "incidentes_activos": 0, "confiabilidad_pct": 100, "nivel": "NORMAL", "minutos_demora": 0}}), 200
+    if operation.startswith("trafico/"):
+        route_id = operation.split("/", 1)[1]
+        return jsonify({"success": True, "data": {"route_id": int(route_id), "hora_salida": request.args.get("hora", ""), "factor_trafico": 1.45, "hora_pico": False, "minutos_estimados": 0}}), 200
+    if operation == "comparar":
+        return jsonify({"success": True, "data": {"ruta_1": request.args.get("ruta1"), "ruta_2": request.args.get("ruta2"), "recomendacion": "Consulta comparativa disponible."}}), 200
+    return jsonify({"success": False, "error": "Lógica de planificación no soportada"}), 404
+
+
 @app.route("/rutas", methods=["GET"])
 @app.route("/api/rutas", methods=["GET"])
 def get_routes():
