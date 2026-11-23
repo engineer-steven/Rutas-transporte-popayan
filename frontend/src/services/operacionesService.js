@@ -10,6 +10,9 @@ export default {
   obtenerIncidentes(routeId) {
     return apiOperaciones.get(`/operaciones/incidentes/${routeId}`)
   },
+  actualizarIncidente(id, datos) {
+    return apiOperaciones.put(`/operaciones/incidentes/${id}`, datos)
+  },
   calcularDiferenciaBuses(routeId, bus1, bus2) {
     return apiOperaciones.get(`/operaciones/diferencia-buses?route_id=${routeId}&bus1=${encodeURIComponent(bus1)}&bus2=${encodeURIComponent(bus2)}`)
   },

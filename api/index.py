@@ -282,6 +282,26 @@ def deployed_incidents(route_id):
     return jsonify({"success": True, "route_id": route_id, "total_incidentes": len(data), "data": data}), 200
 
 
+@app.route("/operaciones/incidentes/<int:incident_id>", methods=["PUT"])
+@app.route("/api/operaciones/incidentes/<int:incident_id>", methods=["PUT"])
+def deployed_update_incident(incident_id):
+    _, error = _admin_or_roles("SUPERVISOR", "OPERADOR")
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    status = str(data.get("status", "RESUELTO")).strip().upper()
+    if status not in {"ACTIVO", "RESUELTO", "INACTIVO", "CERRADO"}:
+        return jsonify({"success": False, "error": "Estado de incidente no válido"}), 400
+    ok, result = _supabase_first(
+        "PATCH",
+        [f"incidents?id=eq.{incident_id}", f"incidentes?id=eq.{incident_id}"],
+        {"status": status},
+    )
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo desactivar la novedad vial", "mensaje": result}), 502
+    return jsonify({"success": True, "mensaje": f"Novedad vial #{incident_id} marcada como {status}"}), 200
+
+
 @app.route("/operaciones/incidente", methods=["POST"])
 @app.route("/api/operaciones/incidente", methods=["POST"])
 def deployed_create_incident():
@@ -367,7 +387,7 @@ def deployed_alertas():
     if error:
         return error
     if request.method == "GET":
-        ok, result = _supabase_first("GET", ["alertas?select=*&order=id.desc", "emergency_alerts?select=*&order=id.desc"])
+        ok, result = _supabase_first("GET", ["emergency_alerts?select=*&order=id.desc", "alertas?select=*&order=id.desc"])
         if not ok:
             return jsonify({"success": False, "error": "No se pudieron cargar las alertas", "mensaje": result}), 502
         return jsonify({"success": True, "data": result if isinstance(result, list) else []}), 200
@@ -377,9 +397,10 @@ def deployed_alertas():
         return jsonify({"success": False, "error": "Faltan campos requeridos para la alerta"}), 400
     payload = dict(data)
     payload["status"] = payload.get("status", "ACTIVA")
-    ok, result = _supabase_first("POST", ["alertas", "emergency_alerts"], payload)
+    ok, result = _supabase_first("POST", ["emergency_alerts", "alertas"], payload)
     if not ok:
-        return jsonify({"success": False, "error": "No se pudo registrar la alerta", "mensaje": result}), 502
+        detail = result.get("message", result) if isinstance(result, dict) else result
+        return jsonify({"success": False, "error": "No se pudo registrar la alerta", "mensaje": detail}), 502
     return jsonify({"success": True, "data": result[0] if isinstance(result, list) and result else result}), 201
 
 
@@ -390,11 +411,11 @@ def deployed_alerta_detail(alert_id):
     if error:
         return error
     if request.method == "GET":
-        methods = [f"alertas?id=eq.{alert_id}&select=*", f"emergency_alerts?id=eq.{alert_id}&select=*"]
+        methods = [f"emergency_alerts?id=eq.{alert_id}&select=*", f"alertas?id=eq.{alert_id}&select=*"]
     elif request.method == "PUT":
-        methods = [f"alertas?id=eq.{alert_id}", f"emergency_alerts?id=eq.{alert_id}"]
+        methods = [f"emergency_alerts?id=eq.{alert_id}", f"alertas?id=eq.{alert_id}"]
     else:
-        methods = [f"alertas?id=eq.{alert_id}", f"emergency_alerts?id=eq.{alert_id}"]
+        methods = [f"emergency_alerts?id=eq.{alert_id}", f"alertas?id=eq.{alert_id}"]
     ok, result = _supabase_first("GET" if request.method == "GET" else request.method, methods, request.get_json(silent=True) or None)
     if not ok or (isinstance(result, list) and not result):
         return jsonify({"success": False, "error": f"Alerta {alert_id} no encontrada", "mensaje": result}), 404

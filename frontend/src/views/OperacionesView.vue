@@ -122,6 +122,18 @@ async function calcularDiferenciaHoras() {
     calcHoras.error = e.response?.data?.error || 'Formato de hora inválido'
   }
 }
+
+async function desactivarIncidente(incidente) {
+  error.value = ''
+  exito.value = ''
+  try {
+    await operacionesService.actualizarIncidente(incidente.id, { status: 'RESUELTO' })
+    exito.value = `Novedad vial #${incidente.id} desactivada correctamente`
+    await cargarDatosRuta()
+  } catch (e) {
+    error.value = e.response?.data?.error || 'No se pudo desactivar la novedad vial'
+  }
+}
 </script>
 
 <template>
@@ -199,6 +211,7 @@ async function calcularDiferenciaHoras() {
                 <th>Descripción</th>
                 <th>Reportado</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -217,6 +230,11 @@ async function calcularDiferenciaHoras() {
                 <td>{{ inc.descripcion }}</td>
                 <td style="font-size: 0.8rem">{{ inc.reportado_por }}</td>
                 <td><span class="badge badge-warning">{{ inc.estado }}</span></td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" @click="desactivarIncidente(inc)">
+                    Desactivar
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
