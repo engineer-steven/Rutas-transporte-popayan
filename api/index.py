@@ -548,15 +548,83 @@ def deployed_planner(operation):
         ok, routes = _supabase_first("GET", ["rutas?select=*&status=eq.ACTIVA&order=id.asc", "routes?select=*&status=eq.ACTIVA&order=id.asc"])
         routes = routes if ok and isinstance(routes, list) else []
         matches = [r for r in routes if origin.lower() in str(r.get("origin", "")).lower() and destination.lower() in str(r.get("destination", "")).lower()]
-        return jsonify({"success": True, "data": {"encontrado": bool(matches), "found": bool(matches), "origen": origin, "destino": destination, "ruta": matches[0] if matches else None, "alternativas": matches}}), 200
+        if operation == "viaje-directo" and matches:
+            route = matches[0]
+            recommended = {
+                "codigo": route.get("code"), "empresa": route.get("company"),
+                "paradero_subida": route.get("origin"), "paradero_bajada": route.get("destination"),
+                "paradas": 0, "minutos_estimados": 15, "tarifa_cop": route.get("fare", 0),
+            }
+            return jsonify({"success": True, "data": {"encontrado": True, "ruta_recomendada": recommended, "resumen": f"Ruta directa {route.get('code')} encontrada."}}), 200
+        return jsonify({"success": True, "data": {"encontrado": False, "origen": origin, "destino": destination, "mensaje": "No encontramos una conexión con los puntos indicados."}}), 200
     if operation.startswith("congestion/"):
         route_id = operation.split("/", 1)[1]
-        return jsonify({"success": True, "data": {"route_id": int(route_id), "incidentes_activos": 0, "confiabilidad_pct": 100, "nivel": "NORMAL", "minutos_demora": 0}}), 200
+        route, raw = _get_route(int(route_id))
+        if not route:
+            return jsonify({"success": False, "error": f"Ruta {route_id} no encontrada", "mensaje": raw}), 404
+        ok, incidents = _route_incidents(int(route_id))
+        incidents = incidents if ok else []
+        delay = 0
+        penalty = 0
+        for incident in incidents:
+            incident_type = str(incident.get("incident_type", incident.get("tipo", ""))).upper()
+            if "ACCIDENTE" in incident_type:
+                delay += 20
+                penalty += 30
+            elif "DESVIO" in incident_type or "CIERRE" in incident_type:
+                delay += 15
+                penalty += 20
+            elif "CONGESTION" in incident_type or "TRAFICO" in incident_type:
+                delay += 10
+                penalty += 15
+            else:
+                delay += 8
+                penalty += 10
+        count = len(incidents)
+        level = "NORMAL" if count == 0 else "MODERADO" if count == 1 else "ALTO" if count == 2 else "CRITICO"
+        reliability = max(10.0, 100.0 - penalty)
+        result = {"route_id": route["id"], "route_code": route.get("code"), "company": route.get("company"), "incidentes_activos": count, "nivel_congestion": level, "demora_minutos": delay, "confiabilidad": f"{reliability:.1f}%", "diagnostico": f"Ruta {route.get('code')} operando con normalidad." if count == 0 else f"{count} incidente(s) activo(s). Retraso estimado ~{delay} min."}
+        return jsonify({"success": True, "data": result}), 200
     if operation.startswith("trafico/"):
         route_id = operation.split("/", 1)[1]
-        return jsonify({"success": True, "data": {"route_id": int(route_id), "hora_salida": request.args.get("hora", ""), "factor_trafico": 1.45, "hora_pico": False, "minutos_estimados": 0}}), 200
+        route, raw = _get_route(int(route_id))
+        if not route:
+            return jsonify({"success": False, "error": f"Ruta {route_id} no encontrada", "mensaje": raw}), 404
+        hora_text = request.args.get("hora", "08:00").strip()
+        try:
+            departure = datetime.datetime.strptime(hora_text, "%H:%M")
+        except ValueError:
+            departure = datetime.datetime.strptime("08:00", "%H:%M")
+            hora_text = "08:00"
+        hour_value = departure.hour + departure.minute / 60
+        peak = (6.5 <= hour_value <= 8.5) or (11.75 <= hour_value <= 13.75) or (17.5 <= hour_value <= 19.5)
+        ok, stops = _route_stops(int(route_id))
+        stop_count = len(stops) if ok else 0
+        base_minutes = max(15, stop_count * 3 if stop_count else 25)
+        factor = 1.45 if peak else 1.0
+        real_minutes = int(round(base_minutes * factor))
+        arrival = (departure + datetime.timedelta(minutes=real_minutes)).strftime("%H:%M")
+        result = {"route_id": route["id"], "route_code": route.get("code"), "hora_salida": hora_text, "es_hora_pico": peak, "factor_trafico": factor, "minutos_base": base_minutes, "minutos_reales": real_minutes, "hora_llegada_estimada": arrival, "consejo": f"Hora pico (+45% de tráfico). Salida {hora_text} y llegada aproximada {arrival}." if peak else f"Tráfico fluido. Salida {hora_text} y llegada aproximada {arrival}."}
+        return jsonify({"success": True, "data": result}), 200
     if operation == "comparar":
-        return jsonify({"success": True, "data": {"ruta_1": request.args.get("ruta1"), "ruta_2": request.args.get("ruta2"), "recomendacion": "Consulta comparativa disponible."}}), 200
+        try:
+            id1 = int(request.args.get("ruta1", 0))
+            id2 = int(request.args.get("ruta2", 0))
+        except ValueError:
+            return jsonify({"success": False, "error": "Los identificadores de ruta deben ser enteros"}), 400
+        route1, raw1 = _get_route(id1)
+        route2, raw2 = _get_route(id2)
+        if not route1 or not route2:
+            return jsonify({"success": False, "error": "Una o ambas rutas no existen", "mensaje": raw1 if not route1 else raw2}), 404
+        ok1, stops1 = _route_stops(id1)
+        ok2, stops2 = _route_stops(id2)
+        count1 = max(1, len(stops1) if ok1 else 0)
+        count2 = max(1, len(stops2) if ok2 else 0)
+        time1 = count1 * 4
+        time2 = count2 * 4
+        code1, code2 = route1.get("code"), route2.get("code")
+        result = {f"ruta_{code1}": {"id": id1, "empresa": route1.get("company"), "paradas": count1, "tiempo_min": time1, "tarifa_cop": route1.get("fare", 0)}, f"ruta_{code2}": {"id": id2, "empresa": route2.get("company"), "paradas": count2, "tiempo_min": time2, "tarifa_cop": route2.get("fare", 0)}, "mejor_por_velocidad": code1 if time1 < time2 else code2 if time2 < time1 else "Empate", "mejor_por_economia": code1 if route1.get("fare", 0) < route2.get("fare", 0) else code2 if route2.get("fare", 0) < route1.get("fare", 0) else "Misma tarifa", "veredicto": f"Comparativa {code1} vs {code2}: {count1} y {count2} paradas."}
+        return jsonify({"success": True, **result}), 200
     return jsonify({"success": False, "error": "Lógica de planificación no soportada"}), 404
 
 
